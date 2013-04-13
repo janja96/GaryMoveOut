@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -33,7 +37,7 @@ DynamicObject::DynamicObject(bool isWorldObject) : WorldObject(isWorldObject),
     m_objectType |= TYPEMASK_DYNAMICOBJECT;
     m_objectTypeId = TYPEID_DYNAMICOBJECT;
 
-    m_updateFlag = (UPDATEFLAG_LOWGUID | UPDATEFLAG_STATIONARY_POSITION | UPDATEFLAG_POSITION);
+    m_updateFlag = UPDATEFLAG_STATIONARY_POSITION;
 
     m_valuesCount = DYNAMICOBJECT_END;
 }
@@ -79,29 +83,23 @@ void DynamicObject::RemoveFromWorld()
     }
 }
 
-bool DynamicObject::CreateDynamicObject(uint32 guidlow, Unit* caster, uint32 spellId, Position const& pos, float radius, DynamicObjectType type)
+bool DynamicObject::CreateDynamicObject(uint32 guidlow, Unit* caster, SpellInfo const* spell, Position const& pos, float radius, DynamicObjectType type)
 {
     SetMap(caster->GetMap());
     Relocate(pos);
     if (!IsPositionValid())
     {
-        sLog->outError(LOG_FILTER_GENERAL, "DynamicObject (spell %u) not created. Suggested coordinates isn't valid (X: %f Y: %f)", spellId, GetPositionX(), GetPositionY());
+        sLog->outError(LOG_FILTER_GENERAL, "DynamicObject (spell %u) not created. Suggested coordinates isn't valid (X: %f Y: %f)", spell->Id, GetPositionX(), GetPositionY());
         return false;
     }
 
     WorldObject::_Create(guidlow, HIGHGUID_DYNAMICOBJECT, caster->GetPhaseMask());
 
-    SetEntry(spellId);
+    SetEntry(spell->Id);
     SetObjectScale(1);
     SetUInt64Value(DYNAMICOBJECT_CASTER, caster->GetGUID());
-
-    // The lower word of DYNAMICOBJECT_BYTES must be 0x0001. This value means that the visual radius will be overriden
-    // by client for most of the "ground patch" visual effect spells and a few "skyfall" ones like Hurricane.
-    // If any other value is used, the client will _always_ use the radius provided in DYNAMICOBJECT_RADIUS, but
-    // precompensation is necessary (eg radius *= 2) for many spells. Anyway, blizz sends 0x0001 for all the spells
-    // I saw sniffed...
-    SetByteValue(DYNAMICOBJECT_BYTES, 0, type);
-    SetUInt32Value(DYNAMICOBJECT_SPELLID, spellId);
+    SetUInt32Value(DYNAMICOBJECT_BYTES, spell->SpellVisual[0] | (type << 28));
+    SetUInt32Value(DYNAMICOBJECT_SPELLID, spell->Id);
     SetFloatValue(DYNAMICOBJECT_RADIUS, radius);
     SetUInt32Value(DYNAMICOBJECT_CASTTIME, getMSTime());
 

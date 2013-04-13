@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -454,6 +458,7 @@ class Map : public GridRefManager<NGridType>
         bool ContainsGameObjectModel(const GameObjectModel& model) const { return _dynamicTree.contains(model);}
         bool getObjectHitPos(uint32 phasemask, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float &ry, float& rz, float modifyDist);
 
+        virtual uint32 GetOwnerGuildId(uint32 /*team*/ = TEAM_OTHER) const { return 0; }
         /*
             RESPAWN TIMES
         */

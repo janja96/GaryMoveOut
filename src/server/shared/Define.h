@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -86,5 +90,19 @@ typedef ACE_UINT64 uint64;
 typedef ACE_UINT32 uint32;
 typedef ACE_UINT16 uint16;
 typedef ACE_UINT8 uint8;
+
+enum DBCFormer
+{
+    FT_NA='x',                                              //not used or unknown, 4 byte size
+    FT_NA_BYTE='X',                                         //not used or unknown, byte
+    FT_STRING='s',                                          //char*
+    FT_FLOAT='f',                                           //float
+    FT_INT='i',                                             //uint32
+    FT_BYTE='b',                                            //uint8
+    FT_SORT='d',                                            //sorted by this field, field is not included
+    FT_IND='n',                                             //the same, but parsed to data
+    FT_SQL_PRESENT='p',                                     //Used in sql format to mark column present in sql dbc
+    FT_SQL_ABSENT='a'                                       //Used in sql format to mark column absent in sql dbc
+};
 
 #endif //TRINITY_DEFINE_H

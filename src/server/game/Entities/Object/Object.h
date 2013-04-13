@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -116,6 +120,62 @@ class ZoneScript;
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
 
+//! Structure to ease conversions from single 64 bit integer guid into individual bytes, for packet sending purposes
+//! Nuke this out when porting ObjectGuid from MaNGOS, but preserve the per-byte storage
+struct ObjectGuid
+{
+    public:
+        ObjectGuid() { _data.u64 = 0LL; }
+        ObjectGuid(uint64 guid) { _data.u64 = guid; }
+        ObjectGuid(ObjectGuid const& other) { _data.u64 = other._data.u64; }
+
+        uint8& operator[](uint32 index)
+        {
+            ASSERT(index < sizeof(uint64));
+
+#if TRINITY_ENDIAN == TRINITY_LITTLEENDIAN
+            return _data.byte[index];
+#else
+            return _data.byte[7 - index];
+#endif
+        }
+
+        uint8 const& operator[](uint32 index) const
+        {
+            ASSERT(index < sizeof(uint64));
+
+#if TRINITY_ENDIAN == TRINITY_LITTLEENDIAN
+            return _data.byte[index];
+#else
+            return _data.byte[7 - index];
+#endif
+        }
+
+        operator uint64()
+        {
+            return _data.u64;
+        }
+
+        ObjectGuid& operator=(uint64 guid)
+        {
+            _data.u64 = guid;
+            return *this;
+        }
+
+        ObjectGuid& operator=(ObjectGuid const& other)
+        {
+            _data.u64 = other._data.u64;
+            return *this;
+        }
+
+    private:
+        union
+        {
+            uint64 u64;
+            uint8 byte[8];
+        } _data;
+};
+
 class Object
 {
     public:
@@ -144,7 +204,6 @@ class Object
 
         void BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const;
         void BuildOutOfRangeUpdateBlock(UpdateData* data) const;
-        void BuildMovementUpdateBlock(UpdateData* data, uint32 flags = 0) const;
 
         virtual void DestroyForPlayer(Player* target, bool onDeath = false) const;
 
@@ -415,6 +474,7 @@ struct MovementInfo
     int8 t_seat;
     uint32 t_time;
     uint32 t_time2;
+    uint32 t_time3;
     // swimming/flying
     float pitch;
     // falling
@@ -424,11 +484,26 @@ struct MovementInfo
     // spline
     float splineElevation;
 
+    // bit markers
+    struct MovementElementMarkers
+    {
+        bool hasTransportTime2;
+        bool hasTransportTime3;
+        bool hasPitch;
+        bool hasFallData;
+        bool hasFallDirection;
+        bool hasSplineElevation;
+    } bits;
+
     MovementInfo() :
-        guid(), flags(), flags2(), pos(), time(), t_guid(), t_pos(),
-        t_seat(-1), t_time(), t_time2(), pitch(), fallTime(),
-        j_zspeed(), j_sinAngle(), j_cosAngle(), j_xyspeed()
-    { }
+        guid(0), flags(0), flags2(0), time(0), t_guid(0),
+        t_seat(-1), t_time(0), t_time2(0), t_time3(0), pitch(0.0f), fallTime(0),
+        j_zspeed(0.0f), j_sinAngle(0.0f), j_cosAngle(0.0f), j_xyspeed(0.0f)
+    {
+        pos.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
+        t_pos.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
+        memset(&bits, 0, sizeof(bits));
+    }
 
     uint32 GetMovementFlags() const { return flags; }
     void SetMovementFlags(uint32 flag) { flags = flag; }

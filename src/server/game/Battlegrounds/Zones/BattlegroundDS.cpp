@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -199,6 +203,12 @@ void BattlegroundDS::HandleAreaTrigger(Player* player, uint32 trigger)
             Battleground::HandleAreaTrigger(player, trigger);
             break;
     }
+}
+
+bool BattlegroundDS::HandlePlayerUnderMap(Player* player)
+{
+    player->TeleportTo(GetMapId(), 1299.046f, 784.825f, 9.338f, 2.422f);
+    return true;
 }
 
 void BattlegroundDS::FillInitialWorldStates(WorldPacket &data)

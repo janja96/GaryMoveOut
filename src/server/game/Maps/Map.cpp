@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -1675,15 +1679,8 @@ float Map::GetHeight(float x, float y, float z, bool checkVMap /*= true*/, float
         else
             return vmapHeight;                              // we have only vmapHeight (if have)
     }
-    else
-    {
-        if (!checkVMap)
-            return mapHeight;                               // explicitly use map data (if have)
-        else if (mapHeight > INVALID_HEIGHT && (z < mapHeight + 2 || z == MAX_HEIGHT))
-            return mapHeight;                               // explicitly use map data if original z < mapHeight but map found (z+2 > mapHeight)
-        else
-            return VMAP_INVALID_HEIGHT_VALUE;               // we not have any height
-    }
+
+    return mapHeight;                               // explicitly use map data
 }
 
 inline bool IsOutdoorWMO(uint32 mogpFlags, int32 /*adtId*/, int32 /*rootId*/, int32 /*groupId*/, WMOAreaTableEntry const* wmoEntry, AreaTableEntry const* atEntry)
@@ -1983,7 +1980,7 @@ bool Map::CheckGridIntegrity(Creature* c, bool moved) const
 
 char const* Map::GetMapName() const
 {
-    return i_mapEntry ? i_mapEntry->name[sWorld->GetDefaultDbcLocale()] : "UNNAMEDMAP\x0";
+    return i_mapEntry ? i_mapEntry->name : "UNNAMEDMAP\x0";
 }
 
 void Map::UpdateObjectVisibility(WorldObject* obj, Cell cell, CellCoord cellpair)
@@ -2012,7 +2009,7 @@ void Map::SendInitSelf(Player* player)
 {
     sLog->outInfo(LOG_FILTER_MAPS, "Creating player data for himself %u", player->GetGUIDLow());
 
-    UpdateData data;
+    UpdateData data(player->GetMapId());
 
     // attach to player data current transport data
     if (Transport* transport = player->GetTransport())
@@ -2049,7 +2046,7 @@ void Map::SendInitTransports(Player* player)
     if (tmap.find(player->GetMapId()) == tmap.end())
         return;
 
-    UpdateData transData;
+    UpdateData transData(player->GetMapId());
 
     MapManager::TransportSet& tset = tmap[player->GetMapId()];
 
@@ -2076,7 +2073,7 @@ void Map::SendRemoveTransports(Player* player)
     if (tmap.find(player->GetMapId()) == tmap.end())
         return;
 
-    UpdateData transData;
+    UpdateData transData(player->GetMapId());
 
     MapManager::TransportSet& tset = tmap[player->GetMapId()];
 
@@ -2469,10 +2466,11 @@ bool InstanceMap::AddPlayerToMap(Player* player)
                         // players also become permanently bound when they enter
                         if (groupBind->perm)
                         {
-                            WorldPacket data(SMSG_INSTANCE_LOCK_WARNING_QUERY, 9);
+                            WorldPacket data(SMSG_INSTANCE_LOCK_WARNING_QUERY, 10);
                             data << uint32(60000);
                             data << uint32(i_data ? i_data->GetCompletedEncounterMask() : 0);
                             data << uint8(0);
+                            data << uint8(0); // events it throws:  1 : INSTANCE_LOCK_WARNING   0 : INSTANCE_LOCK_STOP / INSTANCE_LOCK_START
                             player->GetSession()->SendPacket(&data);
                             player->SetPendingBind(mapSave->GetInstanceId(), 60000);
                         }

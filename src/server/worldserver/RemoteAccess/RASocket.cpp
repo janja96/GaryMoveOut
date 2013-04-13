@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -29,9 +33,6 @@
 #include "Util.h"
 #include "World.h"
 #include "SHA1.h"
-
-std::set<RASocket*> RASocket::connectedClients;
-ACE_Thread_Mutex RASocket::listLock;
 
 RASocket::RASocket()
 {
@@ -70,8 +71,6 @@ int RASocket::handle_close(ACE_HANDLE, ACE_Reactor_Mask)
         ACE_OS::sleep(1);
 
     destroy();
-    ACE_GUARD_RETURN (ACE_Thread_Mutex, Guard2, RASocket::listLock, -1);
-    RASocket::connectedClients.erase(this);
     return 0;
 }
 
@@ -251,14 +250,14 @@ int RASocket::check_password(const std::string& user, const std::string& pass)
 
 int RASocket::authenticate()
 {
-    if (send(std::string("Username:\r\n")) == -1)
+    if (send(std::string("Username: ")) == -1)
         return -1;
 
     std::string user;
     if (recv_line(user) == -1)
         return -1;
 
-    if (send(std::string("Password:\r\n")) == -1)
+    if (send(std::string("Password: ")) == -1)
         return -1;
 
     std::string pass;
@@ -274,8 +273,6 @@ int RASocket::authenticate()
         return -1;
 
     sLog->outInfo(LOG_FILTER_REMOTECOMMAND, "User login: %s", user.c_str());
-    ACE_GUARD_RETURN(ACE_Thread_Mutex,Guard,RASocket::listLock,-1);
-    RASocket::connectedClients.insert(this);
 
     return 0;
 }
@@ -380,7 +377,7 @@ int RASocket::svc(void)
     for (;;)
     {
         // show prompt
-        if (send("TC> ") == -1)
+        if (send("ArkCORE> ") == -1)
             return -1;
 
         std::string line;
@@ -434,35 +431,4 @@ void RASocket::commandFinished(void* callbackArg, bool /*success*/)
     mb->release();
 
     socket->_commandExecuting = false;
-}
-
-int RASocket::sendf(const char* msg)
-{
-    ACE_GUARD_RETURN (ACE_Thread_Mutex, Guard, outBufferLock, -1);
-
-    if (closing_)
-        return -1;
-
-    int msgLen = strlen(msg);
-
-    if (msgLen + outputBufferLen > RA_BUFF_SIZE)
-        return -1;
-
-    ACE_OS::memcpy(outputBuffer+outputBufferLen, msg, msgLen);
-    outputBufferLen += msgLen;
-    send(msg);
-    send("\r");
-
-    return 0;
-}
-
-void RASocket::raprint( const char * szText )
-{
-    if( !szText )
-        return;
-
-    //aquire lock
-    ACE_GUARD(ACE_Thread_Mutex,Guard,RASocket::listLock);
-    for(std::set<RASocket*>::iterator list_iter = RASocket::connectedClients.begin(); list_iter != RASocket::connectedClients.end(); ++list_iter)
-        (*list_iter)->sendf(szText);
 }

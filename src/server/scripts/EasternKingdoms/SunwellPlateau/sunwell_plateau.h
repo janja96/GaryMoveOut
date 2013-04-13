@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -19,16 +23,7 @@
 #ifndef DEF_SUNWELLPLATEAU_H
 #define DEF_SUNWELLPLATEAU_H
 
-/*** GameObjects ***/
-#define DATA_GO_FORECEFIELD_COLL_1  21
-#define DATA_GO_FORECEFIELD_COLL_2  22
-#define DATA_GO_FIRE_BARRIER        23
-#define DATA_GATE_1                 24
-#define DATA_GATE_2                 25
-#define DATA_GATE_3                 26
-#define DATA_GATE_4                 27
-#define DATA_GATE_5                 28
-
+/*** Encounters ***/
 enum Data
 {
     DATA_KALECGOS_EVENT,
@@ -65,7 +60,6 @@ enum Data64
 
     /*** Misc ***/
     DATA_PLAYER_GUID,
-    DATA_REPAIR_BOT_STATE,
 };
 
 enum Creatures
@@ -111,5 +105,9 @@ enum Creatures
     CREATURE_BLACK_HOLE                           = 25855,
 };
 
-#endif
+enum GameObjects
+{
+    GAMEOBJECT_ORB_OF_THE_BLUE_DRAGONFLIGHT       = 188415,
+};
 
+#endif

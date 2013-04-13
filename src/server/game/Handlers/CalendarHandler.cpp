@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -90,6 +94,10 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recvData*/)
         data.AppendPackedTime(calendarEvent->GetEventTime());
         data << uint32(calendarEvent->GetFlags());
         data << int32(calendarEvent->GetDungeonId());
+
+        Guild* guild = sGuildMgr->GetGuildById(calendarEvent->GetGuildId());
+        data << uint64(guild ? guild->GetGUID() : 0);
+
         data.appendPackGUID(calendarEvent->GetCreatorGUID());
     }
 
@@ -613,10 +621,11 @@ void WorldSession::HandleCalendarComplain(WorldPacket& recvData)
     uint64 guid = _player->GetGUID();
     uint64 eventId;
     uint64 complainGUID;
+    uint64 inviteId;
 
-    recvData >> eventId >> complainGUID;
+    recvData >> complainGUID >> eventId >> inviteId;
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_CALENDAR_COMPLAIN [" UI64FMTD "] EventId ["
-        UI64FMTD "] guid [" UI64FMTD "]", guid, eventId, complainGUID);
+        UI64FMTD "] guid [" UI64FMTD "] InviteId [" UI64FMTD "]", guid, eventId, complainGUID, inviteId);
 
     // what to do with complains?
 }

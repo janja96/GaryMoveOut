@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -605,7 +609,7 @@ void Channel::Say(uint64 guid, std::string const& what, uint32 lang)
         chatTag = player->GetChatTag();
 
     // TODO: Add proper RBAC check
-    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL) || sAccountMgr->IsGMAccount || sAccountMgr->IsAdminAccount || sAccountMgr->IsModeratorAccount)
+    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
         lang = LANG_UNIVERSAL;
 
     if (!IsOn(guid))
@@ -615,7 +619,7 @@ void Channel::Say(uint64 guid, std::string const& what, uint32 lang)
         SendToOne(&data, guid);
         return;
     }
-    
+
     if (playersStore[guid].IsMuted())
     {
         WorldPacket data;

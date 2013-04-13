@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -71,7 +75,6 @@ enum Events
 
     EVENT_PHASE,
     EVENT_MORTAL_WOUND,
-    EVENT_FRENZY,
 };
 
 enum Spells
@@ -689,7 +692,7 @@ public:
                 if (Creature* sum = trigger->SummonCreature(NPC_ABOMINATION, PosAbominations[i]))
                 {
                     pKelthuzadAI->spawns.Summon(sum);
-                    sum->GetMotionMaster()->MoveRandom(5.0f);
+                    sum->GetMotionMaster()->MoveRandom(9.0f);
                     sum->SetReactState(REACT_DEFENSIVE);
                 }
             }
@@ -733,7 +736,7 @@ class npc_kelthuzad_abomination : public CreatureScript
             {
                 _events.Reset();
                 _events.ScheduleEvent(EVENT_MORTAL_WOUND, urand(2000, 5000));
-                _events.ScheduleEvent(EVENT_FRENZY, urand(25000, 30000));
+                DoCast(me, SPELL_FRENZY, true);
             }
 
             void UpdateAI(uint32 diff)
@@ -750,10 +753,6 @@ class npc_kelthuzad_abomination : public CreatureScript
                         case EVENT_MORTAL_WOUND:
                             DoCastVictim(SPELL_MORTAL_WOUND, true);
                             _events.ScheduleEvent(EVENT_MORTAL_WOUND, urand(10000, 15000));
-                            break;
-                        case EVENT_FRENZY:
-                            DoCast(me, SPELL_FRENZY,true);
-                            _events.RepeatEvent(urand(25000, 30000));
                             break;
                         default:
                             break;

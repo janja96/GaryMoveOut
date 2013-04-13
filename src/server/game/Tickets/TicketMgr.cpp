@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -34,7 +38,7 @@ inline float GetAge(uint64 t) { return float(time(NULL) - t) / DAY; }
 // GM ticket
 GmTicket::GmTicket() { }
 
-GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NULL)), _lastModifiedTime(time(NULL)), _closedBy(0), _assignedTo(0), _completed(false), _escalatedStatus(TICKET_UNASSIGNED), _viewed(false), _haveTicket(false)
+GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NULL)), _lastModifiedTime(time(NULL)), _closedBy(0), _assignedTo(0), _completed(false), _escalatedStatus(TICKET_UNASSIGNED), _haveTicket(false)
 {
     _id = sTicketMgr->GenerateTicketId();
     _playerName = player->GetName();
@@ -84,8 +88,8 @@ bool GmTicket::LoadFromDB(Field* fields)
 
 void GmTicket::SaveToDB(SQLTransaction& trans) const
 {
-    //     0       1     2      3          4        5      6     7     8           9            10         11         12        13        14        15        16        17
-    // ticketId, guid, name, message, createTime, mapId, posX, posY, posZ, lastModifiedTime, closedBy, assignedTo, comment, response, completed, escalated, viewed, haveticket
+    //     0       1     2      3          4        5      6     7     8           9            10         11         12        13        14        15
+    // ticketId, guid, name, message, createTime, mapId, posX, posY, posZ, lastModifiedTime, closedBy, assignedTo, comment, completed, escalated, viewed
     uint8 index = 0;
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GM_TICKET);
     stmt->setUInt32(  index, _id);
@@ -134,6 +138,11 @@ void GmTicket::WritePacket(WorldPacket& data) const
 
     data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE));                              // escalated data
     data << uint8(_viewed ? GMTICKET_OPENEDBYGM_STATUS_OPENED : GMTICKET_OPENEDBYGM_STATUS_NOT_OPENED); // whether or not it has been viewed
+
+    // TODO: implement these
+    std::string waitTimeOverrideMessage = "";
+    data << waitTimeOverrideMessage;
+    data << uint32(0); // waitTimeOverrideMinutes
 }
 
 void GmTicket::SendResponse(WorldSession* session) const

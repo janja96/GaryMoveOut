@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -76,7 +80,7 @@ public:
             return false;
 
         // error
-        player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, NULL);
+        player->SendEquipError(EQUIP_ERR_CLIENT_LOCKED_OUT, item, NULL);
         return true;
     }
 };
@@ -119,7 +123,7 @@ public:
             targets.GetUnitTarget()->GetEntry() == 20748 && !targets.GetUnitTarget()->HasAura(32578))
             return false;
 
-        player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, NULL);
+        player->SendEquipError(EQUIP_ERR_CLIENT_LOCKED_OUT, item, NULL);
         return true;
     }
 };
@@ -268,15 +272,13 @@ class item_petrov_cluster_bombs : public ItemScript
 public:
     item_petrov_cluster_bombs() : ItemScript("item_petrov_cluster_bombs") { }
 
-    bool OnUse(Player* player, Item* item, const SpellCastTargets & /*targets*/)
+    bool OnUse(Player* player, Item* /*item*/, const SpellCastTargets & /*targets*/)
     {
         if (player->GetZoneId() != ZONE_ID_HOWLING)
             return false;
 
         if (!player->GetTransport() || player->GetAreaId() != AREA_ID_SHATTERED_STRAITS)
         {
-            player->SendEquipError(EQUIP_ERR_NONE, item, NULL);
-
             if (const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(SPELL_PETROV_BOMB))
                 Spell::SendCastResult(player, spellInfo, 1, SPELL_FAILED_NOT_HERE);
 
@@ -381,7 +383,7 @@ public:
             } else
                 player->SendEquipError(EQUIP_ERR_OUT_OF_RANGE, item, NULL);
         } else
-            player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, NULL);
+            player->SendEquipError(EQUIP_ERR_CLIENT_LOCKED_OUT, item, NULL);
         return true;
     }
 };
@@ -407,7 +409,7 @@ public:
                 player->SendEquipError(EQUIP_ERR_OUT_OF_RANGE, item, NULL);
         }
         else
-            player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, NULL);
+            player->SendEquipError(EQUIP_ERR_CLIENT_LOCKED_OUT, item, NULL);
         return true;
     }
 };

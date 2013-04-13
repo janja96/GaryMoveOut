@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -445,7 +449,6 @@ void PetAI::HandleReturnMovement()
         if (!me->GetCharmInfo()->IsFollowing() && !me->GetCharmInfo()->IsReturning())
         {
             ClearCharmInfoFlags();
-
             me->GetCharmInfo()->SetIsReturning(true);
             me->GetMotionMaster()->Clear();
             me->GetMotionMaster()->MoveFollow(me->GetCharmerOrOwner(), PET_FOLLOW_DIST, me->GetFollowAngle());

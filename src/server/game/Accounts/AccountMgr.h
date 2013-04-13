@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -63,8 +67,6 @@ class AccountMgr
         static std::string CalculateShaPassHash(std::string const& name, std::string const& password);
         static bool normalizeString(std::string& utf8String);
         static bool IsPlayerAccount(uint32 gmlevel);
-        static bool IsModeratorAccount(uint32 gmlevel);
-        static bool IsGMAccount(uint32 gmlevel);
         static bool IsAdminAccount(uint32 gmlevel);
         static bool IsConsoleAccount(uint32 gmlevel);
         static bool HasPermission(uint32 accountId, uint32 permission, uint32 realmId);

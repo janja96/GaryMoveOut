@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -22,6 +26,7 @@
 #include "Creature.h"
 #include "GameObject.h"
 #include "Group.h"
+#include "GuildMgr.h"
 #include "LootMgr.h"
 #include "ObjectAccessor.h"
 #include "Object.h"
@@ -186,6 +191,10 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                 (*i)->ModifyMoney(goldPerPlayer);
                 (*i)->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, goldPerPlayer);
 
+                if (Guild* guild = sGuildMgr->GetGuildById((*i)->GetGuildId()))
+                    if (uint32 guildGold = CalculatePct(goldPerPlayer, (*i)->GetTotalAuraModifier(SPELL_AURA_DEPOSIT_BONUS_MONEY_IN_GUILD_BANK_ON_LOOT)))
+                        guild->HandleMemberDepositMoney(this, guildGold, true);
+
                 WorldPacket data(SMSG_LOOT_MONEY_NOTIFY, 4 + 1);
                 data << uint32(goldPerPlayer);
                 data << uint8(playersNear.size() <= 1); // Controls the text displayed in chat. 0 is "Your share is..." and 1 is "You loot..."
@@ -196,6 +205,10 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
         {
             player->ModifyMoney(loot->gold);
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, loot->gold);
+
+            if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
+                if (uint32 guildGold = CalculatePct(loot->gold, player->GetTotalAuraModifier(SPELL_AURA_DEPOSIT_BONUS_MONEY_IN_GUILD_BANK_ON_LOOT)))
+                    guild->HandleMemberDepositMoney(this, guildGold, true);
 
             WorldPacket data(SMSG_LOOT_MONEY_NOTIFY, 4 + 1);
             data << uint32(loot->gold);
@@ -367,6 +380,10 @@ void WorldSession::DoLootRelease(uint64 lguid)
             // skip pickpocketing loot for speed, skinning timer reduction is no-op in fact
             if (!creature->isAlive())
                 creature->AllLootRemovedFromCorpse();
+				
+			// save player when loot
+			if (player)
+				player->SaveToDB();				
 
             creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
             loot->clear();
@@ -453,7 +470,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     ItemPosCountVec dest;
     InventoryResult msg = target->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item.itemid, item.count);
     if (item.follow_loot_rules && !item.AllowedForPlayer(target))
-        msg = EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
+        msg = EQUIP_ERR_CANT_EQUIP_EVER;
     if (msg != EQUIP_ERR_OK)
     {
         target->SendEquipError(msg, NULL, NULL, item.itemid);
@@ -469,7 +486,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     Item* newitem = target->StoreNewItem(dest, item.itemid, true, item.randomPropertyId, looters);
     target->SendNewItem(newitem, uint32(item.count), false, false, true);
     target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, item.itemid, item.count);
-    target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_TYPE, loot->loot_type, item.count);
+    target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_TYPE, item.itemid, item.count, loot->loot_type);
     target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_EPIC_ITEM, item.itemid, item.count);
 
     // mark as looted

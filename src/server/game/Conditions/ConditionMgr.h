@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -129,7 +133,8 @@ enum ConditionSourceType
     CONDITION_SOURCE_TYPE_SMART_EVENT                    = 22,
     CONDITION_SOURCE_TYPE_NPC_VENDOR                     = 23,
     CONDITION_SOURCE_TYPE_SPELL_PROC                     = 24,
-    CONDITION_SOURCE_TYPE_MAX                            = 25  // MAX
+    CONDITION_SOURCE_TYPE_PHASE_DEFINITION               = 25,
+    CONDITION_SOURCE_TYPE_MAX                            = 26  // MAX
 };
 
 enum ComparisionType
@@ -226,6 +231,7 @@ typedef std::map<ConditionSourceType, ConditionTypeContainer> ConditionContainer
 typedef std::map<uint32, ConditionTypeContainer> CreatureSpellConditionContainer;
 typedef std::map<uint32, ConditionTypeContainer> NpcVendorConditionContainer;
 typedef std::map<std::pair<int32, uint32 /*SAI source_type*/>, ConditionTypeContainer> SmartEventConditionContainer;
+typedef std::map<int32 /*zoneId*/, ConditionTypeContainer> PhaseDefinitionConditionContainer;
 
 typedef std::map<uint32, ConditionList> ConditionReferenceContainer;//only used for references
 
@@ -252,6 +258,7 @@ class ConditionMgr
         ConditionList GetConditionsForSpellClickEvent(uint32 creatureId, uint32 spellId);
         ConditionList GetConditionsForSmartEvent(int32 entryOrGuid, uint32 eventId, uint32 sourceType);
         ConditionList GetConditionsForVehicleSpell(uint32 creatureId, uint32 spellId);
+        ConditionList const* GetConditionsForPhaseDefinition(uint32 zone, uint32 entry);
         ConditionList GetConditionsForNpcVendorEvent(uint32 creatureId, uint32 itemId);
 
     private:
@@ -271,6 +278,7 @@ class ConditionMgr
         CreatureSpellConditionContainer   SpellClickEventConditionStore;
         NpcVendorConditionContainer       NpcVendorConditionContainerStore;
         SmartEventConditionContainer      SmartEventConditionStore;
+        PhaseDefinitionConditionContainer PhaseDefinitionsConditionStore;
 };
 
 template <class T> bool CompareValues(ComparisionType type,  T val1, T val2)

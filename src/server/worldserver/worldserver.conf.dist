@@ -1,5 +1,5 @@
 ################################################
-# Trinity Core World Server configuration file #
+# ArkCORE World Server configuration file #
 ################################################
 [worldserver]
 
@@ -27,6 +27,7 @@
 #    CHARACTER DELETE OPTIONS
 #    CUSTOM SERVER OPTIONS
 #    LOGGING SYSTEM SETTINGS
+#    CURRENCIES SETTINGS
 #
 ###################################################################################################
 
@@ -59,7 +60,7 @@ RealmID = 1
 #    DataDir
 #        Description: Data directory setting.
 #        Important:   DataDir needs to be quoted, as the string might contain space characters.
-#        Example:     "@prefix@/share/trinitycore"
+#        Example:     "@prefix@/share/arkcore"
 #        Default:     "."
 
 DataDir = "."
@@ -84,13 +85,13 @@ LogsDir = ""
 #                                                                 section my.ini)
 #                     ".;/path/to/unix_socket;username;password;database" - (use Unix sockets on
 #                                                                           Unix/Linux)
-#        Default:     "127.0.0.1;3306;trinity;trinity;auth"       - (LoginDatabaseInfo)
-#                     "127.0.0.1;3306;trinity;trinity;world"      - (WorldDatabaseInfo)
-#                     "127.0.0.1;3306;trinity;trinity;characters" - (CharacterDatabaseInfo)
+#        Default:     "127.0.0.1;3306;arkania;arkania;auth"       - (LoginDatabaseInfo)
+#                     "127.0.0.1;3306;arkania;arkania;world"      - (WorldDatabaseInfo)
+#                     "127.0.0.1;3306;arkania;arkania;characters" - (CharacterDatabaseInfo)
 
-LoginDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;auth"
-WorldDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;world"
-CharacterDatabaseInfo = "127.0.0.1;3306;trinity;trinity;characters"
+LoginDatabaseInfo     = "127.0.0.1;3306;arkania;arkania;auth"
+WorldDatabaseInfo     = "127.0.0.1;3306;arkania;arkania;world"
+CharacterDatabaseInfo = "127.0.0.1;3306;arkania;arkania;characters"
 
 #
 #    LoginDatabase.WorkerThreads
@@ -578,8 +579,7 @@ StrictPetNames = 0
 #
 #    DBC.Locale
 #        Description: DBC language settings.
-#        Default:     255 - (Auto Detect)
-#                     0   - (English)
+#        Default:     0   - (English)
 #                     1   - (Korean)
 #                     2   - (French)
 #                     3   - (German)
@@ -589,7 +589,7 @@ StrictPetNames = 0
 #                     7   - (Spanish Mexico)
 #                     8   - (Russian)
 
-DBC.Locale = 255
+DBC.Locale = 0
 
 #
 #    DeclinedNames
@@ -603,11 +603,12 @@ DeclinedNames = 0
 #    Expansion
 #        Description: Allow server to use content from expansions. Checks for expansion-related
 #                     map files, client compatibility and class/race character creation.
-#        Default:     2 - (Expansion 2)
+#        Default:     3 - (Expansion 3)
+#                     2 - (Expansion 2)
 #                     1 - (Expansion 1)
 #                     0 - (Disabled, Ignore and disable expansion content (maps, races, classes)
 
-Expansion = 2
+Expansion = 3
 
 #
 #    MinPlayerName
@@ -734,16 +735,16 @@ SkipCinematics = 0
 #        Description: Maximum level that can be reached by players.
 #        Important:   Levels beyond 100 are not recommended at all.
 #        Range:       1-255
-#        Default:     80
+#        Default:     85
 
-MaxPlayerLevel = 80
+MaxPlayerLevel = 85
 
 #
 #    MinDualSpecLevel
 #        Description: Level requirement for Dual Talent Specialization
-#        Default:     40
+#        Default:     30
 
-MinDualSpecLevel = 40
+MinDualSpecLevel = 30
 
 #
 #    StartPlayerLevel
@@ -770,40 +771,12 @@ StartHeroicPlayerLevel = 55
 StartPlayerMoney = 0
 
 #
-#    MaxHonorPoints
-#        Description: Maximum honor points a character can have.
-#        Default:     75000
-
-MaxHonorPoints = 75000
-
-#
-#    StartHonorPoints
-#        Description: Amount of honor points that characters have after creation.
-#        Default:     0
-
-StartHonorPoints = 0
-
-#
-#    MaxArenaPoints
-#        Description: Maximum arena points a character can have.
-#        Default:     10000
-
-MaxArenaPoints = 10000
-
-#
-#    StartArenaPoints
-#        Description: Amount of arena points that characters has after creation.
-#        Default:     0
-
-StartArenaPoints = 0
-
-#
 #    RecruitAFriend.MaxLevel
 #        Description: Highest level up to which a character can benefit from the Recruit-A-Friend
 #                     experience multiplier.
-#        Default:     60
+#        Default:     80
 
-RecruitAFriend.MaxLevel = 60
+RecruitAFriend.MaxLevel = 80
 
 #
 #    RecruitAFriend.MaxDifference
@@ -840,15 +813,6 @@ AllFlightPaths = 0
 #                     1 - (Enabled)
 
 InstantFlightPaths = 0
-
-#
-#    AlwaysMaxSkillForLevel
-#        Description: Players will automatically gain max skill level when logging in or leveling
-#                     up.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-
-AlwaysMaxSkillForLevel = 0
 
 #
 #    ActivateWeather
@@ -973,6 +937,16 @@ Guild.ResetHour = 6
 Guild.BankEventLogRecordsCount = 25
 
 #
+#    Guild.NewsLogRecordsCount
+#        Description: Number of log entries for guild news that are stored per guild. Old
+#                     entries will be overwritten if the number of log entries exceed the
+#                     configured value. High numbers prevent this behavior but may have performance
+#                     impacts.
+#        Default:     250
+
+Guild.NewsLogRecordsCount = 250
+
+#
 #    MaxPrimaryTradeSkill
 #        Description: Maximum number of primary professions a character can learn.
 #        Range:       0-10
@@ -983,10 +957,10 @@ MaxPrimaryTradeSkill = 2
 #
 #    MinPetitionSigns
 #        Description: Number of required signatures on charters to create a guild.
-#        Range:       0-9
-#        Default:     9
+#        Range:       0-4
+#        Default:     4
 
-MinPetitionSigns = 9
+MinPetitionSigns = 4
 
 #
 #    MaxGroupXPDistance
@@ -1064,10 +1038,10 @@ BeepAtStart = 1
 #    Motd
 #        Description: Message of the Day, displayed at login.
 #                     Use '@' for a newline and be sure to escape special characters.
-#        Example:     "Welcome to John\'s Server@This server runs on Trinity Core."
-#        Default:     "Welcome to a Trinity Core server."
+#        Example:     "Welcome to John\'s Server@This server runs on ArkCORE."
+#        Default:     "Welcome to a ArkCORE server."
 
-Motd = "Welcome to a Trinity Core server."
+Motd = "Welcome to a ArkCORE server."
 
 #
 #    Server.LoginInfo
@@ -1872,19 +1846,13 @@ Rate.InstanceResetTime = 1
 
 #
 #    SkillGain.Crafting
-#    SkillGain.Defense
 #    SkillGain.Gathering
-#    SkillGain.Weapon
 #        Description: Crafting/defense/gathering/weapon skills gain rate.
 #        Default:     1 - (SkillGain.Crafting)
-#                     1 - (SkillGain.Defense)
 #                     1 - (SkillGain.Gathering)
-#                     1 - (SkillGain.Weapon)
 
 SkillGain.Crafting  = 1
-SkillGain.Defense   = 1
 SkillGain.Gathering = 1
-SkillGain.Weapon    = 1
 
 #
 #    SkillChance.Orange
@@ -2179,21 +2147,6 @@ Arena.MaxRatingDifference = 150
 #                     0      - (Disabled)
 
 Arena.RatingDiscardTimer = 600000
-
-#
-# Arena.ProgressiveMMRTimer
-# Description: Time between increases in MMR search range
-# Default: 30000 (30 seconds)
-
-Arena.ProgressiveMMRTimer = 30000
-
-#
-# Arena.ProgressiveMMRStepSize
-# Description: Amount by which the search range is increased
-# for each passing of ProgressiveMMRTimer
-# Default: 50
-
-Arena.ProgressiveMMRStepSize = 100
 
 #
 #    Arena.RatedUpdateTimer
@@ -2577,53 +2530,12 @@ PlayerDump.DisallowPaths = 1
 PlayerDump.DisallowOverwrite = 1
 
 #
-#    CustomArenaLogs
-#        Description: Use custom arena logs, done by gc only for website arena log purposes, doesnt effect anything ingame
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-#
-
-CustomArenaLogs = 0
-
-#
-#     GCTokenVendorLog
-#        Description: Log items/services bought through our custom gc_token vendor
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-#
-
-GCTokenVendorLog = 0
-
-#
-#     CryptRun.Enable
-#        Description: Determines whether custom Crypt run event is enabled or not
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-#
-
-CryptRun.Enable = 0
-
-#
-#     CryptRun.Reward
-#        Description: Amount of GC tokens rewarded to the race winner
-#        Default:     10
-#
-
-CryptRun.Reward = 10
-
 #     UI.ShowQuestLevelsInDialogs
 #        Description: Show quest levels next to quest titles in UI dialogs
 #        Example: [13] Westfall Stew
 #        Default: 0 (do not show)
 
 UI.ShowQuestLevelsInDialogs = 0
-
-#
-# Includes satellite to search for work else where LFG
-# Default: 0 - Disable
-#          1 - Enable
-
-LFG.Location.All = 1
 
 #
 ###################################################################################################
@@ -2806,6 +2718,7 @@ Logger.Opcodes=41,6,Console Server
 
 Loggers=Root Chat DBErrors GM RA Warden Character Load WorldServer Opcodes
 
+#
 #    Log.Async.Enable
 #        Description: Enables asyncronous message logging.
 #        Default:     0 - (Disabled)
@@ -2813,221 +2726,153 @@ Loggers=Root Chat DBErrors GM RA Warden Character Load WorldServer Opcodes
 
 Log.Async.Enable = 0
 
-###################################################################################################################
-# PVP RANK / TITLE SYSTEM
 #
-# PvPRank.Rate.ExtraHonor
-# Rate of honor bonus for killing higher pvp ranked players
-# Default: 1 - 10% more honor per rank difference
-# 2 - 20%
-# 0 - off
-#
-# PvPRank.HKPerRank
-# Honor Kills needed for each rank, use "," between values.
-# Whole string must be enclosed with " "
-# Always specify 14 values, for 14 ranks
-# Default: "10,50,100,200,450,1000,2000,3000,4500,7500,10500,15000,30000,50000"
-#
-###################################################################################################################
-
-PvPRank.Rate.ExtraHonor = 0
-PvPRank.HKPerRank = "10,50,100,200,450,1000,2000,3000,4500,7500,10500,15000,30000,50000"
-
-###################################################################################################################
-# Passive Anticheat System!
-#
-#     Anticheat.Enable
-#        Description: Enables or disables the Anticheat System functionality
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
-#
-#     Anticheat.ReportsForIngameWarnings
-#        Description: How many reports the player must have to notify to GameMasters ingame when he generates a new report.
-#        Default:     70
-#
-#     Anticheat.DetectionsEnabled
-#        Description: It represents which detections are enabled.
-#
-#        SPEED_HACK_DETECTION            = 1
-#        FLY_HACK_DETECTION              = 2
-#        WALK_WATER_HACK_DETECTION       = 4
-#        JUMP_HACK_DETECTION             = 8
-#        TELEPORT_PLANE_HACK_DETECTION   = 16
-#        CLIMB_HACK_DETECTION            = 32
-#
-#        Default:     31
-#
-#     Anticheat.MaxReportsForDailyReport
-#        Description: How many reports must the player have to make a report that it is in DB for a day (not only during the player's session).
-#        Default:     70
-#
-#     Anticheat.Ban
-#        Description: Make anticheat active (Ban cheaters character for 1 hour.)
-#        Default: 1 - (Enabled)
-#                 0 - (Disabled)
-#
-###################################################################################################################
-
-Anticheat.Enable = 1
-Anticheat.ReportsForIngameWarnings = 70
-Anticheat.DetectionsEnabled = 31
-Anticheat.MaxReportsForDailyReport = 70
-Anticheat.Ban = 1
+###################################################################################################
 
 ###################################################################################################
-#    Transmogrification config                                                                    #
+#
+#  GUILD LEVELING SETTINGS
+#
+#    Guild.LevelingEnabled
+#        Description: Controls whether guild can gain levels
+#        Default:     1
+#
+
+Guild.LevelingEnabled = 1
+
+#
+#    Guild.SaveInterval
+#        Description: Time (in minutes) between guild experience saves
+#        Default:     15
+#
+
+Guild.SaveInterval = 15
+
+#
+#    Guild.MaxLevel
+#        Description: Defines max level a guild can reach
+#        Default:     25
+#
+
+Guild.MaxLevel = 25
+
+#
+#    Guild.UndeletableLevel
+#        Description: Guild reaching this level (and higher) cannot be disbanded anymore
+#        Default:     4
+#
+
+Guild.UndeletableLevel = 4
+
+#
+#    Guild.XPModifier
+#        Description: Multiplier for guild experience gained from quests
+#        Default:     0.25
+#
+
+Guild.XPModifier = 0.25
+
+#
+#    Guild.DailyXPCap
+#        Description: Maximum experience points a guild can earn each day
+#        Default:     7807500
+#
+
+Guild.DailyXPCap = 7807500
+
+#
+#    Guild.WeeklyReputationCap
+#        Description: Maximum guild reputation a player can earn every week
+#        Default:     4375
+#
+
+Guild.WeeklyReputationCap = 4375
+
+#
+###################################################################################################
+
 ###################################################################################################
 #
-#    GOLD COST
+# CURRENCIES SETTINGS
 #
-#    Transmogrification.RequireGold
-#        Description: 0 No gold cost, 1 scaling gold cost, 2 custom gold cost
-#        Default:    1
+#    Currency.ResetInterval
+#        How often should currency week count reset (days)
+#        Default: 7 (weekly)
 #
-#    Transmogrification.GoldModifier
-#        Description: A multiplier for the default gold cost (Transmogrification.RequireGold is 1)
-#        Default:    1.0
-#
-#    Transmogrification.GoldCost
-#        Description: Cost of transmogrification in copper for custom gold cost (Transmogrification.RequireGold is 2)
-#        Default:    100000
 
-Transmogrification.RequireGold = 1
-Transmogrification.GoldModifier = 1.0
-Transmogrification.GoldCost = 100000
+Currency.ResetInterval = 7
 
 #
-#    TOKEN COST
+#    Currency.ResetWeekDay
+#        Week day when currency week count is reset (0..6) 0 == Sunday
+#        Default: 3 (Wednesday)
 #
-#    Transmogrification.RequireToken
-#        Description: Adds/disables token cost
-#        Default:    0
-#
-#    Transmogrification.TokenEntry
-#        Description: Entry of the token item
-#        Default:    49426
-#
-#    Transmogrification.TokenAmount
-#        Description: Amount of tokens required
-#        Default:    1
 
-Transmogrification.RequireToken = 0
-Transmogrification.TokenEntry = 49426
-Transmogrification.TokenAmount = 1
+Currency.ResetWeekDay = 3
 
 #
-#    QUALITIES
+#    Currency.ResetHour
+#        Hour of a day when currency week count is reset (0..23)
+#        Default: 6
 #
-#    Transmogrification.AllowPoor
-#        Description: Allow poor quality items to be used as source and target items
-#        Default:    0
-#
-#    Transmogrification.AllowCommon
-#        Description: Allow common quality items to be used as source and target items
-#        Default:    0
-#
-#    Transmogrification.AllowUncommon
-#        Description: Allow uncommon quality items to be used as source and target items
-#        Default:    1
-#
-#    Transmogrification.AllowRare
-#        Description: Allow rare quality items to be used as source and target items
-#        Default:    1
-#
-#    Transmogrification.AllowEpic
-#        Description: Allow epic quality items to be used as source and target items
-#        Default:    1
-#
-#    Transmogrification.AllowLegendary
-#        Description: Allow legendary quality items to be used as source and target items
-#        Default:    0
-#
-#    Transmogrification.AllowArtifact
-#        Description: Allow artifact quality items to be used as source and target items
-#        Default:    0
-#
-#    Transmogrification.AllowHeirloom
-#        Description: Allow heirloom quality items to be used as source and target items
-#        Default:    1
 
-Transmogrification.AllowPoor = 0
-Transmogrification.AllowCommon = 0
-Transmogrification.AllowUncommon = 1
-Transmogrification.AllowRare = 1
-Transmogrification.AllowEpic = 1
-Transmogrification.AllowLegendary = 0
-Transmogrification.AllowArtifact = 0
-Transmogrification.AllowHeirloom = 1
-
-###################################################################################################################
-# Updated external mail!
-#
-# ExternalMail
-#       Enable external mail delivery from mail_external table.
-#       Default: 0 (disabled)
-#                1 (enabled)
-#
-# ExternalMailInterval
-#       Mail delivery delay time for item sending from mail_external table, in minutes.
-#       Default: 1 minute
-#
-###################################################################################################################
-
-ExternalMail = 1
-ExternalMailInterval = 1
-
-###################################################################################################################
-# Armory!
-#
-#    Armory.Enable
-#        Description: Activates the WowArmory.
-#        Default:     0 - (Disable)
-#                     1 - (Enable)
-#
-###################################################################################################################
-
-Armory.Enable = 1
-
-###################################################################################################################
-# Allow Two Side Interaction Chat!
-#
-#      AllowTwoSide.Interaction.Chat.Area
-#              Description: Allow say chat between factions on specific area.
-#              Default:         -1 - (Disabled)
-#              Astranaar:      415 - (Enable location Astranaar)
-#
-###################################################################################################################
-
-AllowTwoSide.Interaction.Chat.Area = 415
-
-###################################################################################################################
-# MULTIKILL SYSTEM
-#
-# MultiKill.Enable
-# Description: Enable Disable Multikill System.
-# Default: 0 - (Disabled)
-# 1 - (Enabled)
-#
-# MultiKill.BattleGround.Only
-# Description: System works only battlegrounds.
-# Default: 0 - (Disabled)
-# 1 - (Enabled)
-#
-# MultiKill.Log
-# Description: Enable/Disable Multkill Logging in DB.
-# Default: 0 - (Disabled)
-# 1 - (Enabled)
-#
-# MultiKill.Time.Between
-# Description: The period between murders which it is possible to consider simultaneous.
-# Default: 15
-#
-###################################################################################################################
-
-MultiKill.Enable = 0
-MultiKill.BattleGround.Only = 0
-MultiKill.Log = 0
-MultiKill.Time.Between = 15
+Currency.ResetHour = 6
 
 #
-###################################################################################################################
+#    Currency.StartHonorPoints
+#        Amount of honor points that new players will start with
+#        Default: 0 (with precision)
+#
+
+Currency.StartHonorPoints = 0
+
+#
+#    Currency.MaxHonorPoints
+#        Amount honor points a player can have
+#        Default: 4000
+#
+
+Currency.MaxHonorPoints = 4000
+
+#
+#    Currency.StartJusticePoints
+#        Amount of justice points that new players will start with
+#        Default: 0 (with precision)
+#
+
+Currency.StartJusticePoints = 0
+
+#
+#    Currency.MaxJusticePoints
+#        Amount justice points a player can have
+#        Default: 4000
+#
+
+Currency.MaxJusticePoints = 4000
+
+#
+#    Currency.StartConquestPoints
+#        Amount of conquest points that new players will start with
+#        Default: 0 (with precision)
+#
+
+Currency.StartConquestPoints = 0
+
+#
+#    Currency.ConquestPointsDefaultWeekCap
+#        Amount of conquest points that player can earn per week
+#        Default: 1350
+#
+
+Currency.ConquestPointsDefaultWeekCap = 1350
+
+#
+#    Currency.ConquestPointsArenaReward
+#        Amount of conquest points rewarded by winning arenas
+#        Default: 180
+#
+
+Currency.ConquestPointsArenaReward = 180
+
+#
+###################################################################################################

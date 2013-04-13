@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -34,6 +38,10 @@ void WorldSession::HandleChannelVoiceOnOpcode(WorldPacket& /*recvData*/)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_CHANNEL_VOICE_ON");
     // Enable Voice button in channel context menu
+    /* structure:
+        8 bits -> channel name length
+        string -> channel name
+    */
 }
 
 void WorldSession::HandleSetActiveVoiceChannel(WorldPacket& recvData)

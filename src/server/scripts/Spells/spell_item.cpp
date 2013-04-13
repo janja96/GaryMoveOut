@@ -523,21 +523,15 @@ class spell_item_necrotic_touch : public SpellScriptLoader
                 return true;
             }
 
-            bool CheckProc(ProcEventInfo& eventInfo)
-            {
-                return eventInfo.GetProcTarget();
-            }
-
             void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
             {
                 PreventDefaultAction();
                 int32 bp = CalculatePct(int32(eventInfo.GetDamageInfo()->GetDamage()), aurEff->GetAmount());
-                GetTarget()->CastCustomSpell(SPELL_ITEM_NECROTIC_TOUCH_PROC, SPELLVALUE_BASE_POINT0, bp, eventInfo.GetProcTarget(), true, NULL, aurEff);
+                GetTarget()->CastCustomSpell(SPELL_ITEM_NECROTIC_TOUCH_PROC, SPELLVALUE_BASE_POINT0, bp, GetTarget(), true, NULL, aurEff);
             }
 
             void Register()
             {
-                DoCheckProc += AuraCheckProcFn(spell_item_necrotic_touch_AuraScript::CheckProc);
                 OnEffectProc += AuraEffectProcFn(spell_item_necrotic_touch_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
             }
         };
@@ -2299,8 +2293,7 @@ class spell_item_unusual_compass : public SpellScriptLoader
             void HandleDummy(SpellEffIndex /* effIndex */)
             {
                 Unit* caster = GetCaster();
-                caster->SetOrientation(frand(0.0f, 62832.0f) / 10000.0f);
-                caster->SendMovementFlagUpdate(true);
+                caster->SetFacingTo(frand(0.0f, 62832.0f) / 10000.0f);
             }
 
             void Register()

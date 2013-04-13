@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -29,7 +33,7 @@
 #include "ScriptMgr.h"
 #include "CreatureAISelector.h"
 #include "Group.h"
-
+#include "MapManager.h"
 #include "GameObjectModel.h"
 #include "DynamicTree.h"
 
@@ -38,7 +42,7 @@ GameObject::GameObject(): WorldObject(false), m_model(NULL), m_goValue(), m_AI(N
     m_objectType |= TYPEMASK_GAMEOBJECT;
     m_objectTypeId = TYPEID_GAMEOBJECT;
 
-    m_updateFlag = (UPDATEFLAG_LOWGUID | UPDATEFLAG_STATIONARY_POSITION | UPDATEFLAG_POSITION | UPDATEFLAG_ROTATION);
+    m_updateFlag = (UPDATEFLAG_STATIONARY_POSITION | UPDATEFLAG_ROTATION);
 
     m_valuesCount = GAMEOBJECT_END;
     m_respawnTime = 0;
@@ -232,6 +236,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
             m_goValue.Building.Health = goinfo->building.intactNumHits + goinfo->building.damagedNumHits;
             m_goValue.Building.MaxHealth = m_goValue.Building.Health;
             SetGoAnimProgress(255);
+            SetUInt32Value(GAMEOBJECT_PARENTROTATION, m_goInfo->building.destructibleData);
             break;
         case GAMEOBJECT_TYPE_TRANSPORT:
             SetUInt32Value(GAMEOBJECT_LEVEL, goinfo->transport.pause);
@@ -317,7 +322,7 @@ void GameObject::Update(uint32 diff)
                             SetGoState(GO_STATE_ACTIVE);
                             SetUInt32Value(GAMEOBJECT_FLAGS, GO_FLAG_NODESPAWN);
 
-                            UpdateData udata;
+                            UpdateData udata(caster->GetMapId());
                             WorldPacket packet;
                             BuildValuesUpdateBlockForPlayer(&udata, caster->ToPlayer());
                             udata.BuildPacket(&packet);
@@ -1119,7 +1124,7 @@ void GameObject::Use(Unit* user)
 
             Player* player = user->ToPlayer();
 
-            player->PrepareGossipMenu(this, GetGOInfo()->questgiver.gossipID, true);
+            player->PrepareGossipMenu(this, GetGOInfo()->questgiver.gossipID);
             player->SendPreparedGossip(this);
             return;
         }
@@ -1738,7 +1743,6 @@ bool GameObject::IsInRange(float x, float y, float z, float radius) const
     float dx = x - GetPositionX();
     float dy = y - GetPositionY();
     float dz = z - GetPositionZ();
-
     float dist = sqrt(dx*dx + dy*dy);
     //! Check if the distance between the 2 objects is 0, can happen if both objects are on the same position.
     //! The code below this check wont crash if dist is 0 because 0/0 in float operations is valid, and returns infinite
@@ -1842,8 +1846,6 @@ void GameObject::ModifyHealth(int32 change, Unit* attackerOrHealer /*= NULL*/, u
         data << uint32(-change);
         data << uint32(spellId);
         player->GetSession()->SendPacket(&data);
-        if (Battleground* bg = player->GetBattleground())
-            bg->EventPlayerDamagedGO(player, this, m_goInfo->building.damageEvent);
     }
 
     GameObjectDestructibleState newState = GetDestructibleState();

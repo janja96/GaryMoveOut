@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -196,7 +200,8 @@ void TempSummon::InitStats(uint32 duration)
 
     if (owner)
     {
-        if (uint32 slot = m_Properties->Slot)
+        int32 slot = m_Properties->Slot;
+        if (slot > 0)
         {
             if (owner->m_SummonSlot[slot] && owner->m_SummonSlot[slot] != GetGUID())
             {
@@ -268,10 +273,13 @@ void TempSummon::RemoveFromWorld()
         return;
 
     if (m_Properties)
-        if (uint32 slot = m_Properties->Slot)
+    {
+        int32 slot = m_Properties->Slot;
+        if (slot > 0)
             if (Unit* owner = GetSummoner())
                 if (owner->m_SummonSlot[slot] == GetGUID())
                     owner->m_SummonSlot[slot] = 0;
+    }
 
     //if (GetOwnerGUID())
     //    sLog->outError(LOG_FILTER_UNITS, "Unit %u has owner guid when removed from world", GetEntry());

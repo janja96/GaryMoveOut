@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -94,12 +98,12 @@ void WorldSession::SendTaxiMenu(Creature* unit)
 {
     // find current node
     uint32 curloc = sObjectMgr->GetNearestTaxiNode(unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ(), unit->GetMapId(), GetPlayer()->GetTeam());
-
-    if (curloc == 0)
+    if (!curloc)
         return;
 
     bool lastTaxiCheaterState = GetPlayer()->isTaxiCheater();
-    if (unit->GetEntry() == 29480) GetPlayer()->SetTaxiCheater(true); // Grimwing in Ebon Hold, special case. NOTE: Not perfect, Zul'Aman should not be included according to WoWhead, and I think taxicheat includes it.
+    if (unit->GetEntry() == 29480)
+        GetPlayer()->SetTaxiCheater(true); // Grimwing in Ebon Hold, special case. NOTE: Not perfect, Zul'Aman should not be included according to WoWhead, and I think taxicheat includes it.
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_TAXINODE_STATUS_QUERY %u ", curloc);
 
@@ -199,13 +203,10 @@ void WorldSession::HandleMoveSplineDoneOpcode(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_MOVE_SPLINE_DONE");
 
-    uint64 guid; // used only for proper packet read
-    recvData.readPackGUID(guid);
+    recvData.read_skip<uint32>();                          // unk
 
     MovementInfo movementInfo;                              // used only for proper packet read
-    ReadMovementInfo(recvData, &movementInfo);
-
-    recvData.read_skip<uint32>();                          // unk
+    _player->ReadMovementInfo(recvData, &movementInfo);
 
     // in taxi flight packet received in 2 case:
     // 1) end taxi path in far (multi-node) flight

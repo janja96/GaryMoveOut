@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -150,9 +154,9 @@ std::string secsToTimeString(uint64 timeInSecs, bool shortText, bool hoursOnly)
     return ss.str();
 }
 
-int32 MoneyStringToMoney(const std::string& moneyString)
+int64 MoneyStringToMoney(const std::string& moneyString)
 {
-    int32 money = 0;
+    int64 money = 0;
 
     if (!(std::count(moneyString.begin(), moneyString.end(), 'g') == 1 ||
         std::count(moneyString.begin(), moneyString.end(), 's') == 1 ||
@@ -169,7 +173,7 @@ int32 MoneyStringToMoney(const std::string& moneyString)
         if (gCount + sCount + cCount != 1)
             return 0;
 
-        uint32 amount = atoi(*itr);
+        uint64 amount = atol(*itr);
         if (gCount == 1)
             money += amount * 100 * 100;
         else if (sCount == 1)

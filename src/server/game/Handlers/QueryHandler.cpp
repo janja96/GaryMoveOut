@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -118,10 +122,14 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 100);
         data << uint32(entry);                              // creature entry
         data << Name;
-        data << uint8(0) << uint8(0) << uint8(0);           // name2, name3, name4, always empty
+
+        for (int i = 0; i < 7; i++)
+            data << uint8(0); // name2, ..., name8
+
         data << SubName;
         data << ci->IconName;                               // "Directions" for guard, string for Icons 2.3.0
         data << uint32(ci->type_flags);                     // flags
+        data << uint32(ci->type_flags2);                    // unknown meaning
         data << uint32(ci->type);                           // CreatureType.dbc
         data << uint32(ci->family);                         // CreatureFamily.dbc
         data << uint32(ci->rank);                           // Creature Rank (elite, boss, etc)
@@ -137,6 +145,7 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         for (uint32 i = 0; i < MAX_CREATURE_QUEST_ITEMS; ++i)
             data << uint32(ci->questItems[i]);              // itemId[6], quest drop
         data << uint32(ci->movementId);                     // CreatureMovementInfo.dbc
+        data << uint32(ci->expansionUnknown);               // unknown meaning
         SendPacket(&data);
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
     }
@@ -192,7 +201,8 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recvData)
         data.append(info->raw.data, MAX_GAMEOBJECT_DATA);
         data << float(info->size);                          // go size
         for (uint32 i = 0; i < MAX_GAMEOBJECT_QUEST_ITEMS; ++i)
-            data << uint32(info->questItems[i]);              // itemId[6], quest drop
+            data << uint32(info->questItems[i]);            // itemId[6], quest drop
+        data << int32(info->unkInt32);                      // 4.x, unknown
         SendPacket(&data);
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");
     }
@@ -207,7 +217,7 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recvData)
     }
 }
 
-void WorldSession::HandleCorpseQueryOpcode(WorldPacket & /*recvData*/)
+void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received MSG_CORPSE_QUERY");
 

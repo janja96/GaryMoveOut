@@ -37,8 +37,6 @@ enum PaladinSpells
     SPELL_PALADIN_HOLY_SHOCK_R1_DAMAGE           = 25912,
     SPELL_PALADIN_HOLY_SHOCK_R1_HEALING          = 25914,
 
-    PALADIN_SPELL_SACRED_SHIELD_EFFECT           = 58597,
-		
     SPELL_PALADIN_BLESSING_OF_LOWER_CITY_DRUID   = 37878,
     SPELL_PALADIN_BLESSING_OF_LOWER_CITY_PALADIN = 37879,
     SPELL_PALADIN_BLESSING_OF_LOWER_CITY_PRIEST  = 37880,
@@ -57,6 +55,8 @@ enum PaladinSpells
     SPELL_PALADIN_HAND_OF_SACRIFICE              = 6940,
     SPELL_PALADIN_DIVINE_SACRIFICE               = 64205,
 
+    SPELL_PALADIN_DIVINE_PURPOSE_PROC            = 90174,
+
     SPELL_PALADIN_GLYPH_OF_SALVATION             = 63225,
 
     SPELL_PALADIN_RIGHTEOUS_DEFENSE_TAUNT        = 31790,
@@ -68,7 +68,7 @@ enum PaladinSpells
 };
 
 // 31850 - Ardent Defender
-class spell_pal_ardent_defender : public SpellScriptLoader
+/*class spell_pal_ardent_defender : public SpellScriptLoader
 {
     public:
         spell_pal_ardent_defender() : SpellScriptLoader("spell_pal_ardent_defender") { }
@@ -91,7 +91,7 @@ class spell_pal_ardent_defender : public SpellScriptLoader
                 return GetUnitOwner()->GetTypeId() == TYPEID_PLAYER;
             }
 
-            void CalculateAmount(AuraEffect const* /*aurEff*/, int32 & amount, bool & /*canBeRecalculated*/)
+            void CalculateAmount(AuraEffect const* aurEff, int32 & amount, bool & canBeRecalculated)
             {
                 // Set absorbtion amount to unlimited
                 amount = -1;
@@ -141,7 +141,7 @@ class spell_pal_ardent_defender : public SpellScriptLoader
         {
             return new spell_pal_ardent_defender_AuraScript();
         }
-};
+};*/
 
 // 37877 - Blessing of Faith
 class spell_pal_blessing_of_faith : public SpellScriptLoader
@@ -809,61 +809,105 @@ class spell_pal_righteous_defense : public SpellScriptLoader
         }
 };
 
-// 58597 - Sacred Shield
+// 85285 - Sacred Shield
 class spell_pal_sacred_shield : public SpellScriptLoader
 {
     public:
         spell_pal_sacred_shield() : SpellScriptLoader("spell_pal_sacred_shield") { }
 
-        class spell_pal_sacred_shield_AuraScript : public AuraScript
+        class spell_pal_sacred_shield_SpellScript : public SpellScript
         {
-            PrepareAuraScript(spell_pal_sacred_shield_AuraScript);
-            bool Validate(SpellInfo const* /*entry*/)
+            PrepareSpellScript(spell_pal_sacred_shield_SpellScript);
+
+            SpellCastResult CheckCast()
             {
-                if (!sSpellMgr->GetSpellInfo(PALADIN_SPELL_SACRED_SHIELD_EFFECT))
-                    return false;
-                return true;
-            }
+                Unit* caster = GetCaster();
+                if (caster->GetTypeId() != TYPEID_PLAYER)
+                    return SPELL_FAILED_DONT_REPORT;
 
-            void CalculateAmount(AuraEffect const* aurEff, int32& amount, bool& /*canBeRecalculated*/)
-            {
-                if (Unit* caster = GetCaster())
-                {
-                    // +75.00% from sp bonus
-                    float bonus = CalculatePct(caster->SpellBaseHealingBonusDone(GetSpellInfo()->GetSchoolMask()), 75.0f);
+                if (!caster->HealthBelowPct(30))
+                    return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
 
-                    // Divine Guardian is only applied at the spell healing bonus because it was already applied to the base value in CalculateSpellDamage
-                    bonus = caster->ApplyEffectModifiers(GetSpellInfo(), aurEff->GetEffIndex(), bonus);
-                    bonus *= caster->CalculateLevelPenalty(GetSpellInfo());
-
-                    amount += int32(bonus);
-
-                    // Arena - Dampening
-                    if (AuraEffect const* dampening = caster->GetAuraEffect(SPELL_GENERIC_ARENA_DAMPENING, EFFECT_0))
-                        AddPct(amount, dampening->GetAmount());
-                    // Battleground - Dampening
-                    else if (AuraEffect const* dampening = caster->GetAuraEffect(SPELL_GENERIC_BATTLEGROUND_DAMPENING, EFFECT_0))
-                        AddPct(amount, dampening->GetAmount());
-                }
-            }
-			
-            void HandleEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (Unit* caster = GetCaster())
-                    if (caster->ToPlayer())
-                        caster->ToPlayer()->AddSpellCooldown(PALADIN_SPELL_SACRED_SHIELD_EFFECT, 0, time(NULL) + 6);
+                return SPELL_CAST_OK;
             }
 
             void Register()
             {
-                DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_pal_sacred_shield_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
-                AfterEffectRemove += AuraEffectRemoveFn(spell_pal_sacred_shield_AuraScript::HandleEffectRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
+                OnCheckCast += SpellCheckCastFn(spell_pal_sacred_shield_SpellScript::CheckCast);
             }
         };
 
-        AuraScript* GetAuraScript() const
+        SpellScript* GetSpellScript() const
         {
-            return new spell_pal_sacred_shield_AuraScript();
+            return new spell_pal_sacred_shield_SpellScript();
+        }
+};
+
+// 85256 - Templar's Verdict
+/// Updated 4.3.4
+class spell_pal_templar_s_verdict : public SpellScriptLoader
+{
+    public:
+        spell_pal_templar_s_verdict() : SpellScriptLoader("spell_pal_templar_s_verdict") { }
+
+        class spell_pal_templar_s_verdict_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_pal_templar_s_verdict_SpellScript);
+
+            bool Validate (SpellInfo const* /*spellEntry*/)
+            {
+                if (!sSpellMgr->GetSpellInfo(SPELL_PALADIN_DIVINE_PURPOSE_PROC))
+                    return false;
+
+                return true;
+            }
+
+            bool Load()
+            {
+                if (GetCaster()->GetTypeId() != TYPEID_PLAYER)
+                    return false;
+
+                if (GetCaster()->ToPlayer()->getClass() != CLASS_PALADIN)
+                    return false;
+
+                return true;
+            }
+
+            void ChangeDamage(SpellEffIndex /*effIndex*/)
+            {
+                Unit* caster = GetCaster();
+                int32 damage = GetHitDamage();
+
+                if (caster->HasAura(SPELL_PALADIN_DIVINE_PURPOSE_PROC))
+                    damage *= 7.5;  // 7.5*30% = 225%
+                else
+                {
+                    switch (caster->GetPower(POWER_HOLY_POWER))
+                    {
+                        case 0: // 1 Holy Power
+                            damage = damage;
+                            break;
+                        case 1: // 2 Holy Power
+                            damage *= 3;    // 3*30 = 90%
+                            break;
+                        case 2: // 3 Holy Power
+                            damage *= 7.5;  // 7.5*30% = 225%
+                            break;
+                    }
+                }
+
+                SetHitDamage(damage);
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_pal_templar_s_verdict_SpellScript::ChangeDamage, EFFECT_0, SPELL_EFFECT_WEAPON_PERCENT_DAMAGE);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_pal_templar_s_verdict_SpellScript();
         }
 };
 
@@ -913,9 +957,10 @@ class spell_pal_seal_of_righteousness : public SpellScriptLoader
         }
 };
 
+
 void AddSC_paladin_spell_scripts()
 {
-    new spell_pal_ardent_defender();
+    //new spell_pal_ardent_defender();
     new spell_pal_blessing_of_faith();
     new spell_pal_blessing_of_sanctuary();
     new spell_pal_divine_sacrifice();
@@ -931,5 +976,6 @@ void AddSC_paladin_spell_scripts()
     new spell_pal_lay_on_hands();
     new spell_pal_righteous_defense();
     new spell_pal_sacred_shield();
+    new spell_pal_templar_s_verdict();
     new spell_pal_seal_of_righteousness();
 }

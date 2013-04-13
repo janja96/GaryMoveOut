@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -52,7 +56,7 @@ class ChatHandler
         explicit ChatHandler(WorldSession* session) : m_session(session), sentErrorMessage(false) {}
         virtual ~ChatHandler() {}
 
-        static void FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char *channelName, uint64 target_guid, const char *message, Unit* speaker);
+        static void FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char *channelName, uint64 target_guid, const char *message, Unit* speaker, const char* addonPrefix = NULL);
 
         void FillMessageData(WorldPacket* data, uint8 type, uint32 language, uint64 target_guid, const char* message)
         {

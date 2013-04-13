@@ -20,7 +20,6 @@
 #include "SpellAuraEffects.h"
 #include "Spell.h"
 #include "Vehicle.h"
-#include "MapManager.h"
 #include "GameObjectAI.h"
 #include "ScriptedCreature.h"
 #include "ruby_sanctum.h"
@@ -315,7 +314,6 @@ class boss_halion : public CreatureScript
                 me->SetReactState(REACT_DEFENSIVE);
                 me->RemoveAurasDueToSpell(SPELL_TWILIGHT_PHASING);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                me->SetHealth(me->GetMaxHealth());
             }
 
             void EnterEvadeMode()

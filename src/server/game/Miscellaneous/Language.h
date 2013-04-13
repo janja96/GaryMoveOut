@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -206,7 +210,15 @@ enum TrinityStrings
     LANG_YOU_CHANGE_RUNIC_POWER         = 173,
     LANG_YOURS_RUNIC_POWER_CHANGED      = 174,
     LANG_LIQUID_STATUS                  = 175,
-    // Room for more level 1              176-199 not used
+
+    LANG_PHASING_REPORT_STATUS          = 176,
+    LANG_PHASING_NO_DEFINITIONS         = 177,              // Phasing
+    LANG_PHASING_SUCCESS                = 178,
+    LANG_PHASING_FAILED                 = 179,
+    LANG_PHASING_LAST_PHASE             = 180,
+    LANG_PHASING_LIST                   = 181,
+    LANG_PHASING_PHASEMASK              = 182,
+    // Room for more level 1              183-199 not used
 
     // level 2 chat
     LANG_NO_SELECTION                   = 200,
@@ -733,12 +745,12 @@ enum TrinityStrings
     LANG_DEBUG_ARENA_OFF                = 738,
     LANG_DEBUG_BG_ON                    = 739,
     LANG_DEBUG_BG_OFF                   = 740,
-    LANG_DIST_ARENA_POINTS_START        = 741,
-    LANG_DIST_ARENA_POINTS_ONLINE_START = 742,
-    LANG_DIST_ARENA_POINTS_ONLINE_END   = 743,
-    LANG_DIST_ARENA_POINTS_TEAM_START   = 744,
-    LANG_DIST_ARENA_POINTS_TEAM_END     = 745,
-    LANG_DIST_ARENA_POINTS_END          = 746,
+//  LANG_DIST_ARENA_POINTS_START        = 741,
+//  LANG_DIST_ARENA_POINTS_ONLINE_START = 742,
+//  LANG_DIST_ARENA_POINTS_ONLINE_END   = 743,
+//  LANG_DIST_ARENA_POINTS_TEAM_START   = 744,
+//  LANG_DIST_ARENA_POINTS_TEAM_END     = 745,
+//  LANG_DIST_ARENA_POINTS_END          = 746,
     LANG_BG_DISABLED                    = 747,
     LANG_ARENA_DISABLED                 = 748,
 //                                      = 749, not used
@@ -1172,47 +1184,6 @@ enum TrinityStrings
     // Use for custom patches             11000-11999
     LANG_AUTO_BROADCAST                 = 11000,
     LANG_INVALID_REALMID                = 11001,
-    LANG_BAN_CHEATER                    = 11002,
-
-    // Admin, GameMaster and Guard Announce
-    LANG_SYSTEMMESSAGE_ADMINISTRATOR    = 11666,
-    LANG_SYSTEMMESSAGE_GAMEMASTER       = 11667,
-    LANG_SYSTEMMESSAGE_GUARD            = 11668,
-    LANG_SYSTEMMESSAGE_DEVELOPER        = 11669,
-
-    LANG_REM_TRANSMOGRIFICATIONS_ITEMS  = 11100,
-    LANG_ERR_NO_TRANSMOGRIFICATIONS     = 11101,
-    LANG_REM_TRANSMOGRIFICATION_ITEM    = 11102,
-    LANG_ERR_NO_TRANSMOGRIFICATION      = 11103,
-    LANG_ITEM_TRANSMOGRIFIED            = 11104,
-    LANG_ERR_NO_ITEM_SUITABLE           = 11105,
-    LANG_ERR_NO_ITEM_EXISTS             = 11106,
-    LANG_ERR_EQUIP_SLOT_EMPTY           = 11107,
-
-    LANG_SLOT_NAME_HEAD                 = 11108,
-    LANG_SLOT_NAME_SHOULDERS            = 11109,
-    LANG_SLOT_NAME_BODY                 = 11110,
-    LANG_SLOT_NAME_CHEST                = 11111,
-    LANG_SLOT_NAME_WAIST                = 11112,
-    LANG_SLOT_NAME_LEGS                 = 11113,
-    LANG_SLOT_NAME_FEET                 = 11114,
-    LANG_SLOT_NAME_WRISTS               = 11115,
-    LANG_SLOT_NAME_HANDS                = 11116,
-    LANG_SLOT_NAME_BACK                 = 11117,
-    LANG_SLOT_NAME_MAINHAND             = 11118,
-    LANG_SLOT_NAME_OFFHAND              = 11119,
-    LANG_SLOT_NAME_RANGED               = 11120,
-    LANG_SLOT_NAME_TABARD               = 11121,
-
-    LANG_OPTION_BACK                    = 11122,
-    LANG_OPTION_REMOVE_ALL              = 11123,
-    LANG_POPUP_REMOVE_ALL               = 11124,
-    LANG_OPTION_UPDATE_MENU             = 11125,
-    LANG_OPTION_REMOVE_ONE              = 11126,
-    LANG_POPUP_REMOVE_ONE               = 11127,
-    LANG_POPUP_TRANSMOGRIFY             = 11128,
-
-    LANG_ERR_NO_TOKEN                   = 11129
 
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)

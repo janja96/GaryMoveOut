@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -323,24 +327,6 @@ void InstanceScript::DoSendNotifyToInstance(char const* format, ...)
     }
 }
 
-// Complete Achievement for all players in instance
-void InstanceScript::DoCompleteAchievement(uint32 achievement)
-{
-    AchievementEntry const* pAE = GetAchievementStore()->LookupEntry(achievement);
-    Map::PlayerList const &PlayerList = instance->GetPlayers();
-
-    if (!pAE)
-    {
-        sLog->outError(LOG_FILTER_TSCR, "DoCompleteAchievement called for not existing achievement %u", achievement);
-        return;
-    }
-
-    if (!PlayerList.isEmpty())
-        for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
-            if (Player *pPlayer = i->getSource())
-                pPlayer->CompletedAchievement(pAE);
-}
-
 // Update Achievement Criteria for all players in instance
 void InstanceScript::DoUpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscValue1 /*= 0*/, uint32 miscValue2 /*= 0*/, Unit* unit /*= NULL*/)
 {
@@ -349,7 +335,7 @@ void InstanceScript::DoUpdateAchievementCriteria(AchievementCriteriaTypes type, 
     if (!PlayerList.isEmpty())
         for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
             if (Player* player = i->getSource())
-                player->UpdateAchievementCriteria(type, miscValue1, miscValue2, unit);
+                player->UpdateAchievementCriteria(type, miscValue1, miscValue2, 0, unit);
 }
 
 // Start timed achievement for all players in instance
@@ -429,6 +415,7 @@ void InstanceScript::SendEncounterUnit(uint32 type, Unit* unit /*= NULL*/, uint8
         case ENCOUNTER_FRAME_ADD_TIMER:
         case ENCOUNTER_FRAME_ENABLE_OBJECTIVE:
         case ENCOUNTER_FRAME_DISABLE_OBJECTIVE:
+        case ENCOUNTER_FRAME_SET_COMBAT_RES_LIMIT:
             data << uint8(param1);
             break;
         case ENCOUNTER_FRAME_UPDATE_OBJECTIVE:
@@ -436,6 +423,8 @@ void InstanceScript::SendEncounterUnit(uint32 type, Unit* unit /*= NULL*/, uint8
             data << uint8(param2);
             break;
         case ENCOUNTER_FRAME_UNK7:
+        case ENCOUNTER_FRAME_ADD_COMBAT_RES_LIMIT:
+        case ENCOUNTER_FRAME_RESET_COMBAT_RES_LIMIT:
         default:
             break;
     }
@@ -460,7 +449,7 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
             if (encounter->lastEncounterDungeon)
             {
                 dungeonId = encounter->lastEncounterDungeon;
-                sLog->outDebug(LOG_FILTER_LFG, "UpdateEncounterState: Instance %s (instanceId %u) completed encounter %s. Credit Dungeon: %u", instance->GetMapName(), instance->GetInstanceId(), encounter->dbcEntry->encounterName[0], dungeonId);
+                sLog->outDebug(LOG_FILTER_LFG, "UpdateEncounterState: Instance %s (instanceId %u) completed encounter %s. Credit Dungeon: %u", instance->GetMapName(), instance->GetInstanceId(), encounter->dbcEntry->encounterName, dungeonId);
                 break;
             }
         }
@@ -482,59 +471,13 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
     }
 }
 
-uint32 InstanceScript::GetMajorityTeam()
+void InstanceScript::UpdatePhasing()
 {
-    uint32 hordePlayers = 0, alliancePlayers = 0;
-    if (instance)
-    {
-        const Map::PlayerList& players = instance->GetPlayers();
-        if (!players.isEmpty())
-        {
-            Player* arbitraryPlayer = players.getFirst()->getSource();  // Just get the first one - it doesn't matter, we may take anyone. 
-            if (!arbitraryPlayer)
-                return 0;   // Cannot make a decision if there's no player
+    PhaseUpdateData phaseUdateData;
+    phaseUdateData.AddConditionType(CONDITION_INSTANCE_INFO);
 
-            Group* group = arbitraryPlayer->GetGroup();                 // Decisions are based on the players group, despite they are in the instance or not.
-            if (!group)
-                return arbitraryPlayer->GetTeam();   // Only one player -> get his team
-
-            for (GroupReference* it = group->GetFirstMember(); it != 0; it = it->next())
-            {
-                if (Player* member = it->getSource())
-                {
-                    if (!member->isGameMaster())
-                    {
-                        // If it's not an alliance member, it's a horde member... should be logical :)
-                        if (member->GetTeam() == ALLIANCE)
-                            alliancePlayers++;
-                        else
-                            hordePlayers++;
-                        if (!ServerAllowsTwoSideGroups())
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Note: We have to return 0 if we cannot make a decision, i.e. when there's no player in the instance (yet).
-    if (hordePlayers == 0 && alliancePlayers == 0)
-    {
-        return 0;
-    }
-    else
-    {
-        /*
-            Decision rules:
-            #Horde > #Alliance: HORDE
-            #Horde == #Alliance: Random(HORDE, ALLIANCE)
-            else: ALLIANCE
-        */
-        if (hordePlayers > alliancePlayers) 
-            return HORDE;
-        else if (hordePlayers < alliancePlayers)
-            return ALLIANCE;
-        else
-            return (urand(0,1) ? ALLIANCE : HORDE);
-    }
+    Map::PlayerList const& players = instance->GetPlayers();
+    for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+        if (Player* player = itr->getSource())
+            player->GetPhaseMgr().NotifyConditionChanged(phaseUdateData);
 }

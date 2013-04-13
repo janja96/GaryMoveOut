@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -18,17 +22,13 @@
 
 /* ScriptData
 SDName: Moonglade
-SD%Complete: 100
-SDComment: Quest support: 30, 272, 5929, 5930, 10965. Special Flight Paths for Druid class.
+SD%Complete: 0
+SDComment: Quest support:
 SDCategory: Moonglade
 EndScriptData */
 
 /* ContentData
-npc_bunthen_plainswind
-npc_great_bear_spirit
-npc_silva_filnaveth
-npc_clintar_spirit
-npc_clintar_dreamwalker
+npc_omen
 EndContentData */
 
 #include "ScriptMgr.h"

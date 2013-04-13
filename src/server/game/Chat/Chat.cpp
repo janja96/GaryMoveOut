@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -641,7 +645,7 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
 }
 
 //Note: target_guid used only in CHAT_MSG_WHISPER_INFORM mode (in this case channelName ignored)
-void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char *channelName, uint64 target_guid, const char *message, Unit* speaker)
+void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char *channelName, uint64 target_guid, const char *message, Unit* speaker, const char* addonPrefix /*= NULL*/)
 {
     uint32 messageLength = (message ? strlen(message) : 0) + 1;
 
@@ -695,6 +699,13 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
             *data << uint32(messageLength);
             *data << message;
             *data << uint8(0);
+
+            if (type == CHAT_MSG_RAID_BOSS_WHISPER || type == CHAT_MSG_RAID_BOSS_EMOTE)
+            {
+                *data << float(0.0f);                       // Added in 4.2.0, unk
+                *data << uint8(0);                          // Added in 4.2.0, unk
+            }
+
             return;
         }
         default:
@@ -710,9 +721,16 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     {
         ASSERT(channelName);
         *data << channelName;
+        *data << uint64(target_guid);
     }
+    else if (type == uint8(CHAT_MSG_ADDON))
+    {
+        ASSERT(addonPrefix);
+        *data << addonPrefix;
+    }
+    else
+        *data << uint64(target_guid);
 
-    *data << uint64(target_guid);
     *data << uint32(messageLength);
     *data << message;
     if (session != 0 && type != CHAT_MSG_WHISPER_INFORM && type != CHAT_MSG_DND && type != CHAT_MSG_AFK)

@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -19,16 +23,13 @@
 /* ScriptData
 SDName: Dustwallow_Marsh
 SD%Complete: 95
-SDComment: Quest support: 11180, 558, 11126, 11142, 11174, Vendor Nat Pagle
+SDComment: Quest support: 1270, 1222, 27245
 SDCategory: Dustwallow Marsh
 EndScriptData */
 
 /* ContentData
-mobs_risen_husk_spirit
-npc_lady_jaina_proudmoore
-npc_nat_pagle
-npc_private_hendel
-npc_cassa_crimsonwing - handled by npc_taxi
+npc_stinky
+go_blackhoof_cage
 EndContentData */
 
 #include "ScriptMgr.h"
@@ -766,13 +767,7 @@ public:
 
 void AddSC_dustwallow_marsh()
 {
-    new mobs_risen_husk_spirit();
-    new npc_lady_jaina_proudmoore();
-    new npc_nat_pagle();
-    new npc_private_hendel();
-    new npc_zelfrax();
     new npc_stinky();
-    new npc_theramore_guard();
     new spell_ooze_zap();
     new spell_ooze_zap_channel_end();
     new spell_energize_aoe();

@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -89,6 +93,12 @@ void BattlegroundNA::HandleKillPlayer(Player* player, Player* killer)
 
     UpdateArenaWorldState();
     CheckArenaWinConditions();
+}
+
+bool BattlegroundNA::HandlePlayerUnderMap(Player* player)
+{
+    player->TeleportTo(GetMapId(), 4055.504395f, 2919.660645f, 13.611241f, player->GetOrientation());
+    return true;
 }
 
 void BattlegroundNA::HandleAreaTrigger(Player* player, uint32 trigger)

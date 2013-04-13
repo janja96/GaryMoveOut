@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -19,14 +23,14 @@
 /* ScriptData
 SDName: Silithus
 SD%Complete: 100
-SDComment: Quest support: 7785, 8304, 8507.
+SDComment: Quest support: 7785, 8304.
 SDCategory: Silithus
 EndScriptData */
 
 /* ContentData
 npc_highlord_demitrian
 npcs_rutgar_and_frankal
-quest_a_pawn_on_the_eternal_pawn
+go_wind_stone
 EndContentData */
 
 #include "ScriptMgr.h"
@@ -1505,10 +1509,6 @@ class go_wind_stone : public GameObjectScript
 
 void AddSC_silithus()
 {
-    new go_crystalline_tear();
-    new npc_anachronos_quest_trigger();
-    new npc_anachronos_the_ancient();
-    new mob_qiraj_war_spawn();
     new npc_highlord_demitrian();
     new npcs_rutgar_and_frankal();
     new go_wind_stone();

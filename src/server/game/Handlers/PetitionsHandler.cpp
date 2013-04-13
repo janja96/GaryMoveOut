@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -182,7 +186,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
         return;
     }
 
-    if (!_player->HasEnoughMoney(cost))
+    if (!_player->HasEnoughMoney(uint64(cost)))
     {                                                       //player hasn't got enough money
         _player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, creature, charterid, 0);
         return;
@@ -382,7 +386,7 @@ void WorldSession::SendPetitionQueryOpcode(uint64 petitionguid)
 
 void WorldSession::HandlePetitionRenameOpcode(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "Received opcode MSG_PETITION_RENAME");   // ok
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "Received opcode MSG_PETITION_RENAME");
 
     uint64 petitionGuid;
     uint32 type;
@@ -550,14 +554,10 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
         WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (8+8+4));
         data << uint64(petitionGuid);
         data << uint64(_player->GetGUID());
-        data << (uint32)PETITION_SIGN_ALREADY_SIGNED;
+        data << uint32(PETITION_SIGN_ALREADY_SIGNED);
 
         // close at signer side
         SendPacket(&data);
-
-        // update for owner if online
-        if (Player* owner = ObjectAccessor::FindPlayer(ownerGuid))
-            owner->GetSession()->SendPacket(&data);
         return;
     }
 
@@ -779,7 +779,7 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket& recvData)
         if (_player->GetGuildId())
         {
             data.Initialize(SMSG_TURN_IN_PETITION_RESULTS, 4);
-            data << (uint32)PETITION_TURN_ALREADY_IN_GUILD;
+            data << uint32(PETITION_TURN_ALREADY_IN_GUILD);
             _player->GetSession()->SendPacket(&data);
             return;
         }

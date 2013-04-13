@@ -223,7 +223,7 @@ SpellInfo const* ScriptedAI::SelectSpell(Unit* target, uint32 school, uint32 mec
             continue;
 
         //Continue if we don't have the mana to actually cast this spell
-        if (tempSpell->ManaCost > me->GetPower(Powers(tempSpell->PowerType)))
+        if (tempSpell->ManaCost > (uint32)me->GetPower(Powers(tempSpell->PowerType)))
             continue;
 
         //Check if the spell meets our range requirements
@@ -473,6 +473,42 @@ void BossAI::_JustDied()
         instance->SetBossState(_bossId, DONE);
         instance->SaveToDB();
     }
+
+    /*
+     Award Points
+     For 4.3.4 version:
+     BurningCrusadeRaid     = 10  JusticePoints / boss
+     LichKingHeroics        = 16  JusticePoints / boss
+     LichKingRaid           = 23  JusticePoints / boss
+     CataclysmHeroics       = 75  JusticePoints / boss
+     CataclysmRaid 10man    = 75  ValorPoints   / boss
+	 CataclysmRaid 10man    = 105 ValorPoints   / boss
+     */
+    if (Map* map = instance->instance)
+    {
+        Map::PlayerList const &PlayerList = map->GetPlayers();
+        if (!PlayerList.isEmpty())
+        {
+            for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+            {
+                if (Player* player = i->getSource())
+                {
+                    if (map->GetEntry()->Expansion() == 1 && map->GetEntry()->IsRaid())
+                        player->ModifyCurrency(395, 1000);
+                    else if (map->GetEntry()->Expansion() == 2 && !map->IsRaid() && map->IsHeroic())
+                        player->ModifyCurrency(395, 1600);
+                    else if (map->GetEntry()->Expansion() == 2 && map->IsRaid())
+                        player->ModifyCurrency(395, 2300);
+                    else if (map->GetEntry()->Expansion() == 3 && !map->IsRaid() && map->IsHeroic())
+                        player->ModifyCurrency(395, 7500);
+                    else if (map->GetEntry()->Expansion() == 3 && map->IsRaid() && !Is25ManRaid())
+                        player->ModifyCurrency(396, 7500);
+                    else if (map->GetEntry()->Expansion() == 3 && Is25ManRaid())
+                        player->ModifyCurrency(396, 10500);
+                }
+            }
+        }
+    }
 }
 
 void BossAI::_EnterCombat()
@@ -578,6 +614,20 @@ void BossAI::UpdateAI(uint32 diff)
         ExecuteEvent(eventId);
 
     DoMeleeAttackIfReady();
+}
+
+void BossAI::_DespawnAtEvade()
+{
+    uint32 corpseDelay = me->GetCorpseDelay();
+    uint32 respawnDelay = me->GetRespawnDelay();
+
+    me->SetCorpseDelay(1);
+    me->SetRespawnDelay(29);
+
+    me->DespawnOrUnsummon();
+
+    me->SetCorpseDelay(corpseDelay);
+    me->SetRespawnDelay(respawnDelay);
 }
 
 // WorldBossAI - for non-instanced bosses

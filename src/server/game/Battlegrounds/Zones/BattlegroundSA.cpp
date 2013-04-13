@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -270,7 +274,7 @@ void BattlegroundSA::StartShips()
         {
             if (Player* p = ObjectAccessor::FindPlayer(itr->first))
             {
-                UpdateData data;
+                UpdateData data(p->GetMapId());
                 WorldPacket pkt;
                 GetBGObject(i)->BuildValuesUpdateBlockForPlayer(&data, p);
                 data.BuildPacket(&pkt);
@@ -542,7 +546,7 @@ void BattlegroundSA::EventPlayerDamagedGO(Player* /*player*/, GameObject* go, ui
 
     if (eventType == go->GetGOInfo()->building.damagedEvent)
     {
-        uint32 i = getGateIdFromEventId(eventType);
+        uint32 i = getGateIdFromDamagedOrDestroyEventId(eventType);
         GateStatus[i] = BG_SA_GATE_DAMAGED;
         uint32 uws = getWorldStateFromGateId(i);
         if (uws)
@@ -558,14 +562,7 @@ void BattlegroundSA::EventPlayerDamagedGO(Player* /*player*/, GameObject* go, ui
     }
 
     if (eventType == go->GetGOInfo()->building.damageEvent)
-    {
-        uint32 i = getGateIdFromEntry(go->GetEntry());
-        if (GateStatus[i] == BG_SA_GATE_OK)
-        {
-            SendWarningToAll(LANG_BG_SA_IS_UNDER_ATTACK, go->GetGOInfo()->name.c_str());
-            GateStatus[i] = BG_SA_GATE_DAMAGE;
-        }
-    }
+        SendWarningToAll(LANG_BG_SA_IS_UNDER_ATTACK, go->GetGOInfo()->name.c_str());
 }
 
 void BattlegroundSA::HandleKillUnit(Creature* creature, Player* killer)
@@ -619,7 +616,7 @@ void BattlegroundSA::DemolisherStartState(bool start)
 
 void BattlegroundSA::DestroyGate(Player* player, GameObject* go)
 {
-    uint32 i = getGateIdFromEventId(go->GetGOInfo()->building.destroyedEvent);
+    uint32 i = getGateIdFromDamagedOrDestroyEventId(go->GetGOInfo()->building.destroyedEvent);
     if (!GateStatus[i])
         return;
 
@@ -934,7 +931,6 @@ void BattlegroundSA::UpdateDemolisherSpawns()
                                 BG_SA_NpcSpawnlocs[i][2], BG_SA_NpcSpawnlocs[i][3]);
 
                             Demolisher->Respawn();
-                            Demolisher->setFaction(BG_SA_Factions[Attackers]);
                             DemoliserRespawnList.erase(i);
                         }
                     }
@@ -948,8 +944,9 @@ void BattlegroundSA::SendTransportInit(Player* player)
 {
     if (BgObjects[BG_SA_BOAT_ONE] ||  BgObjects[BG_SA_BOAT_TWO])
     {
-        UpdateData transData;
+        UpdateData transData(player->GetMapId());
         if (BgObjects[BG_SA_BOAT_ONE])
+
             GetBGObject(BG_SA_BOAT_ONE)->BuildCreateUpdateBlockForPlayer(&transData, player);
         if (BgObjects[BG_SA_BOAT_TWO])
             GetBGObject(BG_SA_BOAT_TWO)->BuildCreateUpdateBlockForPlayer(&transData, player);
@@ -963,7 +960,7 @@ void BattlegroundSA::SendTransportsRemove(Player* player)
 {
     if (BgObjects[BG_SA_BOAT_ONE] ||  BgObjects[BG_SA_BOAT_TWO])
     {
-        UpdateData transData;
+        UpdateData transData(player->GetMapId());
         if (BgObjects[BG_SA_BOAT_ONE])
             GetBGObject(BG_SA_BOAT_ONE)->BuildOutOfRangeUpdateBlock(&transData);
         if (BgObjects[BG_SA_BOAT_TWO])

@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -141,7 +145,7 @@ class UnitAI
         virtual void SetGUID(uint64 /*guid*/, int32 /*id*/ = 0) {}
         virtual uint64 GetGUID(int32 /*id*/ = 0) const { return 0; }
 
-        Unit* SelectTarget(SelectAggroTarget targetType, uint32 position = 0, float dist = 0.0f, bool playerOnly = true, int32 aura = 0);
+        Unit* SelectTarget(SelectAggroTarget targetType, uint32 position = 0, float dist = 0.0f, bool playerOnly = false, int32 aura = 0);
         // Select the targets satifying the predicate.
         // predicate shall extend std::unary_function<Unit*, bool>
         template <class PREDICATE> Unit* SelectTarget(SelectAggroTarget targetType, uint32 position, PREDICATE const& predicate)

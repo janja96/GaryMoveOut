@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -63,12 +67,12 @@ TrainerSpell const* TrainerSpellData::Find(uint32 spell_id) const
     return NULL;
 }
 
-bool VendorItemData::RemoveItem(uint32 item_id)
+bool VendorItemData::RemoveItem(uint32 item_id, uint8 type)
 {
     bool found = false;
     for (VendorItemList::iterator i = m_items.begin(); i != m_items.end();)
     {
-        if ((*i)->item == item_id)
+        if ((*i)->item == item_id && (*i)->Type == type)
         {
             i = m_items.erase(i++);
             found = true;
@@ -79,10 +83,10 @@ bool VendorItemData::RemoveItem(uint32 item_id)
     return found;
 }
 
-VendorItem const* VendorItemData::FindItemCostPair(uint32 item_id, uint32 extendedCost) const
+VendorItem const* VendorItemData::FindItemCostPair(uint32 item_id, uint32 extendedCost, uint8 type) const
 {
     for (VendorItemList::const_iterator i = m_items.begin(); i != m_items.end(); ++i)
-        if ((*i)->item == item_id && (*i)->ExtendedCost == extendedCost)
+        if ((*i)->item == item_id && (*i)->ExtendedCost == extendedCost && (*i)->Type == type)
             return *i;
     return NULL;
 }
@@ -334,6 +338,7 @@ bool Creature::InitEntry(uint32 entry, uint32 /*team*/, const CreatureData* data
     SetFloatValue(UNIT_FIELD_COMBATREACH, minfo->combat_reach);
 
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
+    SetFloatValue(UNIT_MOD_CAST_HASTE, 1.0f);
 
     SetSpeed(MOVE_WALK,     cinfo->speed_walk);
     SetSpeed(MOVE_RUN,      cinfo->speed_run);
@@ -454,6 +459,7 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
         SetDisableGravity(false);
     }
 
+    // TODO: Shouldn't we check whether or not the creature is in water first?
     if (cInfo->InhabitType & INHABIT_WATER && IsInWater())
          AddUnitMovementFlag(MOVEMENTFLAG_SWIMMING);
     else
@@ -648,13 +654,10 @@ void Creature::RegenerateMana()
     // Combat and any controlled creature
     if (isInCombat() || GetCharmerOrOwnerGUID())
     {
-        if (!IsUnderLastManaUseEffect())
-        {
-            float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA);
-            float Spirit = GetStat(STAT_SPIRIT);
+        float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA);
+        float Spirit = GetStat(STAT_SPIRIT);
 
-            addvalue = uint32((Spirit / 5.0f + 17.0f) * ManaIncreaseRate);
-        }
+        addvalue = uint32((Spirit / 5.0f + 17.0f) * ManaIncreaseRate);
     }
     else
         addvalue = maxValue / 3;
@@ -941,15 +944,7 @@ bool Creature::isCanTrainingOf(Player* player, bool msg) const
             }
             break;
         case TRAINER_TYPE_TRADESKILLS:
-            if (GetCreatureTemplate()->trainer_spell && !player->HasSpell(GetCreatureTemplate()->trainer_spell))
-            {
-                if (msg)
-                {
-                    player->PlayerTalkClass->ClearMenus();
-                    player->PlayerTalkClass->SendGossipMenu(11031, GetGUID());
-                }
-                return false;
-            }
+            // There's no Blacksmith specialization on Cataclysm, conditions are not required for tradeskills
             break;
         default:
             return false;                                   // checked and error output at creature_template loading
@@ -1156,10 +1151,7 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
 
 void Creature::SelectLevel(const CreatureTemplate* cinfo)
 {
-    uint32 rank = isPet() ? 0 : cinfo->rank;
-
-    if (isGuardian() && (ToTempSummon()->GetSummoner() && ToTempSummon()->GetSummoner()->GetTypeId() != TYPEID_PLAYER))
-        return;
+    uint32 rank = isPet()? 0 : cinfo->rank;
 
     // level
     uint8 minlevel = std::min(cinfo->maxlevel, cinfo->minlevel);
@@ -1182,26 +1174,35 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
 
     // mana
     uint32 mana = stats->GenerateMana(cinfo);
-
     SetCreateMana(mana);
-    SetMaxPower(POWER_MANA, mana);                          //MAX Mana
-    SetPower(POWER_MANA, mana);
 
-    /// @todo set UNIT_FIELD_POWER*, for some creature class case (energy, etc)
+    switch (getClass())
+    {
+        case CLASS_WARRIOR:
+            setPowerType(POWER_RAGE);
+            break;
+        case CLASS_ROGUE:
+            setPowerType(POWER_ENERGY);
+            break;
+        default:
+            SetMaxPower(POWER_MANA, mana);
+            SetPower(POWER_MANA, mana);
+            break;
+    }
 
     SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
     SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
 
     //damage
-    float damagemod = 1.0f;//_GetDamageMod(rank);
+    //float damagemod = _GetDamageMod(rank);      // Set during loading templates into dmg_multiplier field
 
-    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cinfo->mindmg * damagemod);
-    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, cinfo->maxdmg * damagemod);
+    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cinfo->mindmg);
+    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, cinfo->maxdmg);
 
-    SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, cinfo->minrangedmg * damagemod);
-    SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, cinfo->maxrangedmg * damagemod);
+    SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, cinfo->minrangedmg);
+    SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, cinfo->maxrangedmg);
 
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower);
 
 }
 
@@ -1797,7 +1798,7 @@ SpellInfo const* Creature::reachWithSpellAttack(Unit* victim)
         if (bcontinue)
             continue;
 
-        if (spellInfo->ManaCost > GetPower(POWER_MANA))
+        if (spellInfo->ManaCost > (uint32)GetPower(POWER_MANA))
             continue;
         float range = spellInfo->GetMaxRange(false);
         float minrange = spellInfo->GetMinRange(false);
@@ -1841,7 +1842,7 @@ SpellInfo const* Creature::reachWithSpellCure(Unit* victim)
         if (bcontinue)
             continue;
 
-        if (spellInfo->ManaCost > GetPower(POWER_MANA))
+        if (spellInfo->ManaCost > (uint32)GetPower(POWER_MANA))
             continue;
 
         float range = spellInfo->GetMaxRange(true);
@@ -2252,11 +2253,6 @@ void Creature::SetInCombatWithZone()
     }
 }
 
-uint32 Creature::GetShieldBlockValue() const                  //dunno mob block value
-{
-    return (getLevel()/2 + uint32(GetStat(STAT_STRENGTH)/20));
-}
-
 void Creature::_AddCreatureSpellCooldown(uint32 spell_id, time_t end_time)
 {
     m_CreatureSpellCooldowns[spell_id] = end_time;
@@ -2578,9 +2574,10 @@ bool Creature::SetWalk(bool enable)
     if (!Unit::SetWalk(enable))
         return false;
 
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_WALK_MODE : SMSG_SPLINE_MOVE_SET_RUN_MODE, 9);
-    data.append(GetPackGUID());
-    SendMessageToSet(&data, false);
+    if (!movespline->Initialized())
+        return true;
+
+    SendMovementWalkMode();
     return true;
 }
 
@@ -2594,9 +2591,7 @@ bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
     if (!movespline->Initialized())
         return true;
 
-    WorldPacket data(disable ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
-    data.append(GetPackGUID());
-    SendMessageToSet(&data, false);
+    SendMovementDisableGravity();
     return true;
 }
 
@@ -2614,10 +2609,10 @@ bool Creature::SetHover(bool enable)
     if (!movespline->Initialized())
         return true;
 
-    //! Not always a packet is sent
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, 9);
-    data.append(GetPackGUID());
-    SendMessageToSet(&data, false);
+    // If creature hovers using aura, the hover movement opcode is sent from aura handler
+    if (!HasAuraType(SPELL_AURA_HOVER))
+        SendMovementHover();
+
     return true;
 }
 

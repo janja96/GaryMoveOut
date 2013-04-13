@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -31,15 +35,16 @@
 #include "Util.h"
 #include "Group.h"
 #include "Opcodes.h"
+#include "WorldSession.h"
 
 #define PET_XP_FACTOR 0.05f
 
 Pet::Pet(Player* owner, PetType type) :
     Guardian(NULL, owner, true), m_usedTalentCount(0), m_removed(false),
-    m_happinessTimer(7500), m_petType(type), m_duration(0), m_auraRaidUpdateMask(0), m_loading(false),
+    m_petType(type), m_duration(0), m_auraRaidUpdateMask(0), m_loading(false),
     m_declinedname(NULL)
 {
-    ASSERT(GetOwner()->GetTypeId() == TYPEID_PLAYER);
+    ASSERT(m_owner->GetTypeId() == TYPEID_PLAYER);
 
     m_unitTypeMask |= UNIT_MASK_PET;
     if (type == HUNTER_PET)
@@ -150,14 +155,14 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
     if (!petEntry)
         return false;
 
-    uint32 summonSpellId = fields[15].GetUInt32();
+    uint32 summonSpellId = fields[14].GetUInt32();
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(summonSpellId);
 
     bool isTemporarySummon = spellInfo && spellInfo->GetDuration() > 0;
     if (current && isTemporarySummon)
         return false;
 
-    PetType petType = PetType(fields[16].GetUInt8());
+    PetType petType = PetType(fields[15].GetUInt8());
     if (petType == HUNTER_PET)
     {
         CreatureTemplate const* creatureInfo = sObjectMgr->GetCreatureTemplate(petEntry);
@@ -224,8 +229,6 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
 
             SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
                                                             // this enables popup window (pet abandon, cancel)
-            SetMaxPower(POWER_HAPPINESS, GetCreatePowers(POWER_HAPPINESS));
-            SetPower(POWER_HAPPINESS, fields[12].GetUInt32());
             setPowerType(POWER_FOCUS);
             break;
         default:
@@ -256,7 +259,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
         else
         {
             SetHealth(savedhealth > GetMaxHealth() ? GetMaxHealth() : savedhealth);
-            SetPower(POWER_MANA, savedmana > GetMaxPower(POWER_MANA) ? GetMaxPower(POWER_MANA) : savedmana);
+            SetPower(POWER_MANA, savedmana > uint32(GetMaxPower(POWER_MANA)) ? GetMaxPower(POWER_MANA) : savedmana);
         }
     }
 
@@ -304,13 +307,13 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
 
     InitTalentForLevel();                                   // set original talents points before spell loading
 
-    uint32 timediff = uint32(time(NULL) - fields[14].GetUInt32());
+    uint32 timediff = uint32(time(NULL) - fields[13].GetUInt32());
     _LoadAuras(timediff);
 
     // load action bar, if data broken will fill later by default spells.
     if (!isTemporarySummon)
     {
-        m_charmInfo->LoadPetActionBar(fields[13].GetString());
+        m_charmInfo->LoadPetActionBar(fields[12].GetString());
 
         _LoadSpells();
         InitTalentForLevel();                               // re-init to check talent count
@@ -438,7 +441,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
 
         // save pet
         std::ostringstream ss;
-        ss  << "INSERT INTO character_pet (id, entry,  owner, modelid, level, exp, Reactstate, slot, name, renamed, curhealth, curmana, curhappiness, abdata, savetime, CreatedBySpell, PetType) "
+        ss  << "INSERT INTO character_pet (id, entry,  owner, modelid, level, exp, Reactstate, slot, name, renamed, curhealth, curmana, abdata, savetime, CreatedBySpell, PetType) "
             << "VALUES ("
             << m_charmInfo->GetPetNumber() << ','
             << GetEntry() << ','
@@ -451,8 +454,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
             << name.c_str() << "', "
             << uint32(HasByteFlag(UNIT_FIELD_BYTES_2, 2, UNIT_CAN_BE_RENAMED) ? 0 : 1) << ','
             << curhealth << ','
-            << curmana << ','
-            << GetPower(POWER_HAPPINESS) << ", '";
+            << curmana << ", '";
 
         for (uint32 i = ACTION_BAR_INDEX_START; i < ACTION_BAR_INDEX_END; ++i)
         {
@@ -513,12 +515,6 @@ void Pet::setDeathState(DeathState s)                       // overwrite virtual
             // pet corpse non lootable and non skinnable
             SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
             RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
-
-             //lose happiness when died and not in BG/Arena
-            MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
-            if (!mapEntry || (mapEntry->map_type != MAP_ARENA && mapEntry->map_type != MAP_BATTLEGROUND))
-                ModifyPower(POWER_HAPPINESS, -HAPPINESS_LEVEL_SIZE);
-
             //SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
         }
     }
@@ -612,18 +608,6 @@ void Pet::Update(uint32 diff)
                     }
                 }
             }
-
-            if (getPetType() != HUNTER_PET)
-                break;
-
-            if (m_happinessTimer <= diff)
-            {
-                LoseHappiness();
-                m_happinessTimer = 7500;
-            }
-            else
-                m_happinessTimer -= diff;
-
             break;
         }
         default:
@@ -669,27 +653,6 @@ void Creature::Regenerate(Powers power)
     addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, power) * (isHunterPet()? PET_FOCUS_REGEN_INTERVAL : CREATURE_REGEN_INTERVAL) / (5 * IN_MILLISECONDS);
 
     ModifyPower(power, int32(addvalue));
-}
-
-void Pet::LoseHappiness()
-{
-    uint32 curValue = GetPower(POWER_HAPPINESS);
-    if (curValue <= 0)
-        return;
-    int32 addvalue = 670;                                   //value is 70/35/17/8/4 (per min) * 1000 / 8 (timer 7.5 secs)
-    if (isInCombat())                                        //we know in combat happiness fades faster, multiplier guess
-        addvalue = int32(addvalue * 1.5f);
-    ModifyPower(POWER_HAPPINESS, -addvalue);
-}
-
-HappinessState Pet::GetHappinessState()
-{
-    if (GetPower(POWER_HAPPINESS) < HAPPINESS_LEVEL_SIZE)
-        return UNHAPPY;
-    else if (GetPower(POWER_HAPPINESS) >= HAPPINESS_LEVEL_SIZE * 2)
-        return HAPPY;
-    else
-        return CONTENT;
 }
 
 void Pet::Remove(PetSaveMode mode, bool returnreagent)
@@ -776,7 +739,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
     SetDisplayId(creature->GetDisplayId());
 
     if (CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(cinfo->family))
-        SetName(cFamily->Name[sWorld->GetDefaultDbcLocale()]);
+        SetName(cFamily->Name);
     else
         SetName(creature->GetNameForLocaleIdx(sObjectMgr->GetDBCLocaleIndex()));
 
@@ -789,7 +752,7 @@ bool Pet::CreateBaseAtCreatureInfo(CreatureTemplate const* cinfo, Unit* owner)
         return false;
 
     if (CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(cinfo->family))
-        SetName(cFamily->Name[sWorld->GetDefaultDbcLocale()]);
+        SetName(cFamily->Name);
 
     Relocate(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ(), owner->GetOrientation());
 
@@ -804,8 +767,6 @@ bool Pet::CreateBaseAtTamed(CreatureTemplate const* cinfo, Map* map, uint32 phas
     if (!Create(guid, map, phaseMask, cinfo->Entry, petId))
         return false;
 
-    SetMaxPower(POWER_HAPPINESS, GetCreatePowers(POWER_HAPPINESS));
-    SetPower(POWER_HAPPINESS, 166500);
     setPowerType(POWER_FOCUS);
     SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, 0);
     SetUInt32Value(UNIT_FIELD_PETEXPERIENCE, 0);
@@ -863,28 +824,20 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
     SetAttackTime(RANGED_ATTACK, BASE_ATTACK_TIME);
 
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
+    SetFloatValue(UNIT_MOD_CAST_HASTE, 1.0f);
 
     //scale
     CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(cinfo->family);
-    if (cFamily && petType == HUNTER_PET)
+    if (cFamily && cFamily->minScale > 0.0f && petType == HUNTER_PET)
     {
-        float scale, minscale, maxscale, maxlevel;
-        minscale = 0.8f;
-        maxscale = 1.2f;
-        if (getLevel() > 70)
-        {
-            if (cinfo->type_flags & CREATURE_TYPEFLAGS_EXOTIC)
-                if (getLevel() > 80)
-                    maxlevel = 80; //for gms and fun servers
-                else
-                    maxlevel = getLevel();
-            else
-                maxlevel = 70;
-        }
+        float scale;
+        if (getLevel() >= cFamily->maxScaleLevel)
+            scale = cFamily->maxScale;
+        else if (getLevel() <= cFamily->minScaleLevel)
+            scale = cFamily->minScale;
         else
-            maxlevel = getLevel();
+            scale = cFamily->minScale + float(getLevel() - cFamily->minScaleLevel) / cFamily->maxScaleLevel * (cFamily->maxScale - cFamily->minScale);
 
-        scale = minscale + (maxlevel * ((maxscale - minscale) / 80));
         SetObjectScale(scale);
     }
 
@@ -938,17 +891,6 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
             SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel + (petlevel / 4)));
 
             //SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, float(cinfo->attackpower));
-
-            if (GetEntry() == 26125)
-            {
-                // remove Corpse Explosion visual from ghouls
-                if (HasAura(51270))
-                    RemoveAura(51270);
-
-                // ghoul should inherit full owners hit chance
-                m_modMeleeHitChance = GetOwner()->m_modMeleeHitChance;
-            }
-
             break;
         }
         case HUNTER_PET:
@@ -960,8 +902,6 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
             //damage range is then petlevel / 2
             SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel + (petlevel / 4)));
             //damage is increased afterwards as strength and pet scaling modify attack power
-            SetModifierValue(UNIT_MOD_STAT_STAMINA, BASE_VALUE, float(GetOwner()->GetStat(STAT_STAMINA)) * 0.3f);
-            //  Bonus Stamina (30% of player stamina)
             break;
         }
         default:
@@ -977,34 +917,9 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                 {
                     if (!pInfo)
                         SetCreateHealth(30 + 30*petlevel);
-
                     float bonusDmg = GetOwner()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE) * 0.15f;
-                    float minDmg = float(petlevel * 2.5f - (petlevel / 2) + bonusDmg);
-                    float maxDmg = float(petlevel * 2.5f + (petlevel / 2) + bonusDmg);
-
-                    // Brambles rank 1
-                    if (GetOwner()->HasAura(16836))
-                    {
-                        minDmg *= 1.05f;
-                        maxDmg *= 1.05f;
-                    }
-                    // Brambles rank 2
-                    else
-                        if (GetOwner()->HasAura(16839))
-                        {
-                            minDmg *= 1.10f;
-                            maxDmg *= 1.10f;
-                        }
-                    // Brambles rank 3
-                    else
-                        if (GetOwner()->HasAura(16840))
-                        {
-                            minDmg *= 1.15f;
-                            maxDmg *= 1.15f;
-                        }
-
-                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, minDmg);
-                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxDmg);
+                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel * 2.5f - (petlevel / 2) + bonusDmg));
+                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 2.5f + (petlevel / 2) + bonusDmg));
                     break;
                 }
                 case 15352: //earth elemental 36213
@@ -1087,16 +1002,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                         SetCreateMana(28 + 10*petlevel);
                         SetCreateHealth(28 + 30*petlevel);
                     }
-
-                    // convert DK melee haste into the gargoyles spell haste, should it be like that? /tibbi
-                    float ownerHaste = ((Player*)m_owner)->GetRatingBonusValue(CR_HASTE_MELEE);
-                    ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED, ownerHaste, false);
-
-                    // also make gargoyle benefit from haste auras, like unholy presence
-                    int meleeHaste = ((Player*)m_owner)->GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE);
-                    ApplyCastTimePercentMod(meleeHaste, true);
-
-                    SetBonusDamage(int32(GetOwner()->GetTotalAttackPowerValue(BASE_ATTACK) * 0.33f));
+                    SetBonusDamage(int32(GetOwner()->GetTotalAttackPowerValue(BASE_ATTACK) * 0.5f));
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel - (petlevel / 4)));
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel + (petlevel / 4)));
                     break;
@@ -1952,6 +1858,8 @@ bool Pet::IsPermanentPetFor(Player* owner) const
                     return GetCreatureTemplate()->type == CREATURE_TYPE_DEMON;
                 case CLASS_DEATH_KNIGHT:
                     return GetCreatureTemplate()->type == CREATURE_TYPE_UNDEAD;
+                case CLASS_MAGE:
+                    return GetCreatureTemplate()->type == CREATURE_TYPE_ELEMENTAL;
                 default:
                     return false;
             }

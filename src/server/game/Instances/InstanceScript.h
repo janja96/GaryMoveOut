@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -42,14 +46,17 @@ typedef std::set<Creature*> MinionSet;
 
 enum EncounterFrameType
 {
-    ENCOUNTER_FRAME_ENGAGE              = 0,
-    ENCOUNTER_FRAME_DISENGAGE           = 1,
-    ENCOUNTER_FRAME_UPDATE_PRIORITY     = 2,
-    ENCOUNTER_FRAME_ADD_TIMER           = 3,
-    ENCOUNTER_FRAME_ENABLE_OBJECTIVE    = 4,
-    ENCOUNTER_FRAME_UPDATE_OBJECTIVE    = 5,
-    ENCOUNTER_FRAME_DISABLE_OBJECTIVE   = 6,
-    ENCOUNTER_FRAME_UNK7                = 7 // Seems to have something to do with sorting the encounter units
+    ENCOUNTER_FRAME_SET_COMBAT_RES_LIMIT    = 0,
+    ENCOUNTER_FRAME_RESET_COMBAT_RES_LIMIT  = 1,
+    ENCOUNTER_FRAME_ENGAGE                  = 2,
+    ENCOUNTER_FRAME_DISENGAGE               = 3,
+    ENCOUNTER_FRAME_UPDATE_PRIORITY         = 4,
+    ENCOUNTER_FRAME_ADD_TIMER               = 5,
+    ENCOUNTER_FRAME_ENABLE_OBJECTIVE        = 6,
+    ENCOUNTER_FRAME_UPDATE_OBJECTIVE        = 7,
+    ENCOUNTER_FRAME_DISABLE_OBJECTIVE       = 8,
+    ENCOUNTER_FRAME_UNK7                    = 9,    // Seems to have something to do with sorting the encounter units
+    ENCOUNTER_FRAME_ADD_COMBAT_RES_LIMIT    = 10
 };
 
 enum EncounterState
@@ -176,9 +183,6 @@ class InstanceScript : public ZoneScript
         // Send Notify to all players in instance
         void DoSendNotifyToInstance(char const* format, ...);
 
-        // Complete Achievement for all players in instance
-        DECLSPEC_DEPRECATED void DoCompleteAchievement(uint32 achievement) ATTR_DEPRECATED;
-
         // Update Achievement Criteria for all players in instance
         void DoUpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscValue1 = 0, uint32 miscValue2 = 0, Unit* unit = NULL);
 
@@ -194,10 +198,6 @@ class InstanceScript : public ZoneScript
 
         // Return wether server allow two side groups or not
         bool ServerAllowsTwoSideGroups() { return sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP); }
-
-        // Returns which team has a majority in the current instance map. Uses ServerAllowsTwoSideGroups() for config-check, thus returns the 
-        // team in the instance if two-side-interaction is not allowed.
-        uint32 GetMajorityTeam(void);
 
         virtual bool SetBossState(uint32 id, EncounterState state);
         EncounterState GetBossState(uint32 id) const { return id < bosses.size() ? bosses[id].state : TO_BE_DECIDED; }
@@ -222,6 +222,9 @@ class InstanceScript : public ZoneScript
         void SendEncounterUnit(uint32 type, Unit* unit = NULL, uint8 param1 = 0, uint8 param2 = 0);
 
         virtual void FillInitialWorldStates(WorldPacket& /*data*/) {}
+
+        // ReCheck PhaseTemplate related conditions
+        void UpdatePhasing();
 
     protected:
         void SetBossNumber(uint32 number) { bosses.resize(number); }

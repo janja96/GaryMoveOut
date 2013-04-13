@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -33,7 +37,6 @@ at_nats_landing                 q11209
 at_bring_your_orphan_to         q910 q910 q1800 q1479 q1687 q1558 q10951 q10952
 at_brewfest
 at_area_52_entrance
-at_azure_dragons_sanctuary      q12107 q12110
 EndContentData */
 
 #include "ScriptMgr.h"
@@ -426,33 +429,6 @@ class AreaTrigger_at_area_52_entrance : public AreaTriggerScript
         std::map<uint32, time_t> _triggerTimes;
 };
 
-/*#####
-## at_azure_dragons_sanctuary
-######*/
-
-enum DragonsSanctuary
-{
-    QUEST_THE_END_OF_THE_LINE_A                  = 12107,
-    QUEST_THE_END_OF_THE_LINE_H                  = 12110,
-    NPC_THE_END_OF_THE_LINE_AT_KILL_CREDIT_BUNNY = 26889,
-};
-
-class AreaTrigger_at_azure_dragons_sanctuary : public AreaTriggerScript
-{
-    public:
-        AreaTrigger_at_azure_dragons_sanctuary() : AreaTriggerScript("at_azure_dragons_sanctuary") {}
-
-        bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/)
-        {
-            if (player->GetQuestStatus(QUEST_THE_END_OF_THE_LINE_A) != QUEST_STATUS_INCOMPLETE
-                || player->GetQuestStatus(QUEST_THE_END_OF_THE_LINE_H) != QUEST_STATUS_INCOMPLETE)
-                return false;
-
-            player->KilledMonsterCredit(NPC_THE_END_OF_THE_LINE_AT_KILL_CREDIT_BUNNY, 0);
-            return true;
-        }
-};
-
 /*######
  ## at_frostgrips_hollow
  ######*/
@@ -529,6 +505,5 @@ void AddSC_areatrigger_scripts()
     new AreaTrigger_at_nats_landing();
     new AreaTrigger_at_brewfest();
     new AreaTrigger_at_area_52_entrance();
-    new AreaTrigger_at_azure_dragons_sanctuary();
     new AreaTrigger_at_frostgrips_hollow();
 }

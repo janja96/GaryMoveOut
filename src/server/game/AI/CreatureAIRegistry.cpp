@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -22,7 +26,6 @@
 #include "GuardAI.h"
 #include "PetAI.h"
 #include "TotemAI.h"
-#include "CreatureEventAI.h"
 #include "RandomMovementGenerator.h"
 #include "MovementGeneratorImpl.h"
 #include "CreatureAIRegistry.h"
@@ -46,7 +49,6 @@ namespace AIRegistry
         (new CreatureAIFactory<CombatAI>("CombatAI"))->RegisterSelf();
         (new CreatureAIFactory<ArcherAI>("ArcherAI"))->RegisterSelf();
         (new CreatureAIFactory<TurretAI>("TurretAI"))->RegisterSelf();
-        (new CreatureAIFactory<CreatureEventAI>("EventAI"))->RegisterSelf();
         (new CreatureAIFactory<VehicleAI>("VehicleAI"))->RegisterSelf();
         (new CreatureAIFactory<SmartAI>("SmartAI"))->RegisterSelf();
 

@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -35,10 +39,14 @@ class WorldPacket;
 enum AuctionError
 {
     ERR_AUCTION_OK                  = 0,
+    ERR_AUCTION_INVENTORY           = 1,
     ERR_AUCTION_DATABASE_ERROR      = 2,
     ERR_AUCTION_NOT_ENOUGHT_MONEY   = 3,
     ERR_AUCTION_ITEM_NOT_FOUND      = 4,
-    ERR_AUCTION_BID_OWN             = 10
+    ERR_AUCTION_HIGHER_BID          = 5,
+    ERR_AUCTION_BID_INCREMENT       = 7,
+    ERR_AUCTION_BID_OWN             = 10,
+    ERR_RESTRICTED_ACCOUNT          = 13,
 };
 
 enum AuctionAction
@@ -161,7 +169,7 @@ class AuctionHouseMgr
         void SendAuctionSuccessfulMail(AuctionEntry* auction, SQLTransaction& trans);
         void SendAuctionExpiredMail(AuctionEntry* auction, SQLTransaction& trans);
         void SendAuctionOutbiddedMail(AuctionEntry* auction, uint32 newPrice, Player* newBidder, SQLTransaction& trans);
-        void SendAuctionCancelledToBidderMail(AuctionEntry* auction, SQLTransaction& trans);
+        void SendAuctionCancelledToBidderMail(AuctionEntry* auction, SQLTransaction& trans, Item* item);
 
         static uint32 GetAuctionDeposit(AuctionHouseEntry const* entry, uint32 time, Item* pItem, uint32 count);
         static AuctionHouseEntry const* GetAuctionHouseEntry(uint32 factionTemplateId);

@@ -1,5 +1,9 @@
 /*
+ *
+ * Copyright (C) 2011-2013 ArkCORE <http://www.arkania.net/>
+ *
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ *
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -28,6 +32,7 @@
 #include "ConditionMgr.h"
 #include "Player.h"
 #include "Opcodes.h"
+#include "WorldSession.h"
 
 void AddItemsSetItem(Player* player, Item* item)
 {
@@ -213,6 +218,10 @@ bool ItemCanGoIntoBag(ItemTemplate const* pProto, ItemTemplate const* pBagProto)
                     if (!(pProto->BagFamily & BAG_FAMILY_MASK_INSCRIPTION_SUPP))
                         return false;
                     return true;
+                case ITEM_SUBCLASS_TACKLE_CONTAINER:
+                    if (!(pProto->BagFamily & BAG_FAMILY_MASK_FISHING_SUPP))
+                        return false;
+                    return true;
                 default:
                     return false;
             }
@@ -239,7 +248,7 @@ Item::Item()
     m_objectType |= TYPEMASK_ITEM;
     m_objectTypeId = TYPEID_ITEM;
 
-    m_updateFlag = UPDATEFLAG_LOWGUID;
+    m_updateFlag = 0;
 
     m_valuesCount = ITEM_END;
     m_slot = 0;
@@ -278,17 +287,6 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
 
     SetUInt32Value(ITEM_FIELD_DURATION, itemProto->Duration);
     SetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME, 0);
-    /** World of Warcraft Armory **/
-    if (sWorld->getBoolConfig(CONFIG_ARMORY_ENABLE))
-    {
-        if (itemProto->Quality > 2 && itemProto->Flags != 2048 && (itemProto->Class == ITEM_CLASS_WEAPON || itemProto->Class == ITEM_CLASS_ARMOR))
-        {
-            if (!GetOwner())
-                return true;
-            GetOwner()->CreateWowarmoryFeed(2, itemid, guidlow, itemProto->Quality);
-        }
-    }
-    /** World of Warcraft Armory **/
     return true;
 }
 
@@ -490,7 +488,6 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
 /*static*/
 void Item::DeleteFromDB(SQLTransaction& trans, uint32 itemGuid)
 {
-    DeleteFakeFromDB(itemGuid);
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
     stmt->setUInt32(0, itemGuid);
     trans->Append(stmt);
@@ -565,46 +562,6 @@ uint32 Item::GetSkill()
     }
 }
 
-uint32 Item::GetSpell()
-{
-    ItemTemplate const* proto = GetTemplate();
-
-    switch (proto->Class)
-    {
-        case ITEM_CLASS_WEAPON:
-            switch (proto->SubClass)
-            {
-                case ITEM_SUBCLASS_WEAPON_AXE:     return  196;
-                case ITEM_SUBCLASS_WEAPON_AXE2:    return  197;
-                case ITEM_SUBCLASS_WEAPON_BOW:     return  264;
-                case ITEM_SUBCLASS_WEAPON_GUN:     return  266;
-                case ITEM_SUBCLASS_WEAPON_MACE:    return  198;
-                case ITEM_SUBCLASS_WEAPON_MACE2:   return  199;
-                case ITEM_SUBCLASS_WEAPON_POLEARM: return  200;
-                case ITEM_SUBCLASS_WEAPON_SWORD:   return  201;
-                case ITEM_SUBCLASS_WEAPON_SWORD2:  return  202;
-                case ITEM_SUBCLASS_WEAPON_STAFF:   return  227;
-                case ITEM_SUBCLASS_WEAPON_DAGGER:  return 1180;
-                case ITEM_SUBCLASS_WEAPON_THROWN:  return 2567;
-                case ITEM_SUBCLASS_WEAPON_SPEAR:   return 3386;
-                case ITEM_SUBCLASS_WEAPON_CROSSBOW:return 5011;
-                case ITEM_SUBCLASS_WEAPON_WAND:    return 5009;
-                default: return 0;
-            }
-        case ITEM_CLASS_ARMOR:
-            switch (proto->SubClass)
-            {
-                case ITEM_SUBCLASS_ARMOR_CLOTH:    return 9078;
-                case ITEM_SUBCLASS_ARMOR_LEATHER:  return 9077;
-                case ITEM_SUBCLASS_ARMOR_MAIL:     return 8737;
-                case ITEM_SUBCLASS_ARMOR_PLATE:    return  750;
-                case ITEM_SUBCLASS_ARMOR_SHIELD:   return 9116;
-                default: return 0;
-            }
-    }
-    return 0;
-}
-
 int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
 {
     ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(item_id);
@@ -666,8 +623,8 @@ void Item::SetItemRandomProperties(int32 randomPropId)
                 SetInt32Value(ITEM_FIELD_RANDOM_PROPERTIES_ID, item_rand->ID);
                 SetState(ITEM_CHANGED, GetOwner());
             }
-            for (uint32 i = PROP_ENCHANTMENT_SLOT_2; i < PROP_ENCHANTMENT_SLOT_2 + 3; ++i)
-                SetEnchantment(EnchantmentSlot(i), item_rand->enchant_id[i - PROP_ENCHANTMENT_SLOT_2], 0, 0);
+            for (uint32 i = PROP_ENCHANTMENT_SLOT_1; i < PROP_ENCHANTMENT_SLOT_1 + 3; ++i)
+                SetEnchantment(EnchantmentSlot(i), item_rand->enchant_id[i - PROP_ENCHANTMENT_SLOT_1], 0, 0);
         }
     }
     else
@@ -683,7 +640,7 @@ void Item::SetItemRandomProperties(int32 randomPropId)
                 SetState(ITEM_CHANGED, GetOwner());
             }
 
-            for (uint32 i = PROP_ENCHANTMENT_SLOT_0; i < PROP_ENCHANTMENT_SLOT_0 + 3; ++i)
+            for (uint32 i = PROP_ENCHANTMENT_SLOT_0; i <= PROP_ENCHANTMENT_SLOT_4; ++i)
                 SetEnchantment(EnchantmentSlot(i), item_rand->enchant_id[i - PROP_ENCHANTMENT_SLOT_0], 0, 0);
         }
     }
@@ -803,10 +760,15 @@ bool Item::HasEnchantRequiredSkill(const Player* player) const
 {
     // Check all enchants for required skill
     for (uint32 enchant_slot = PERM_ENCHANTMENT_SLOT; enchant_slot < MAX_ENCHANTMENT_SLOT; ++enchant_slot)
+    {
+        if (enchant_slot > PRISMATIC_ENCHANTMENT_SLOT || enchant_slot < PROP_ENCHANTMENT_SLOT_0)    // not holding enchantment id
+            continue;
+
         if (uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot)))
             if (SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id))
                 if (enchantEntry->requiredSkill && player->GetSkillValue(enchantEntry->requiredSkill) < enchantEntry->requiredSkillValue)
                     return false;
+    }
 
   return true;
 }
@@ -817,10 +779,15 @@ uint32 Item::GetEnchantRequiredLevel() const
 
     // Check all enchants for required level
     for (uint32 enchant_slot = PERM_ENCHANTMENT_SLOT; enchant_slot < MAX_ENCHANTMENT_SLOT; ++enchant_slot)
+    {
+        if (enchant_slot > PRISMATIC_ENCHANTMENT_SLOT || enchant_slot < PROP_ENCHANTMENT_SLOT_0)    // not holding enchantment id
+            continue;
+
         if (uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot)))
             if (SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id))
                 if (enchantEntry->requiredLevel > level)
                     level = enchantEntry->requiredLevel;
+    }
 
     return level;
 }
@@ -829,10 +796,16 @@ bool Item::IsBoundByEnchant() const
 {
     // Check all enchants for soulbound
     for (uint32 enchant_slot = PERM_ENCHANTMENT_SLOT; enchant_slot < MAX_ENCHANTMENT_SLOT; ++enchant_slot)
+    {
+        if (enchant_slot > PRISMATIC_ENCHANTMENT_SLOT || enchant_slot < PROP_ENCHANTMENT_SLOT_0)    // not holding enchantment id
+            continue;
+
         if (uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot)))
             if (SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id))
                 if (enchantEntry->slot & ENCHANTMENT_CAN_SOULBOUND)
                     return true;
+    }
+
     return false;
 }
 
@@ -840,15 +813,15 @@ InventoryResult Item::CanBeMergedPartlyWith(ItemTemplate const* proto) const
 {
     // not allow merge looting currently items
     if (m_lootGenerated)
-        return EQUIP_ERR_ALREADY_LOOTED;
+        return EQUIP_ERR_LOOT_GONE;
 
     // check item type
     if (GetEntry() != proto->ItemId)
-        return EQUIP_ERR_ITEM_CANT_STACK;
+        return EQUIP_ERR_CANT_STACK;
 
     // check free space (full stacks can't be target of merge
     if (GetCount() >= proto->GetMaxStackSize())
-        return EQUIP_ERR_ITEM_CANT_STACK;
+        return EQUIP_ERR_CANT_STACK;
 
     return EQUIP_ERR_OK;
 }
@@ -860,8 +833,8 @@ bool Item::IsFitToSpellRequirements(SpellInfo const* spellInfo) const
     if (spellInfo->EquippedItemClass != -1)                 // -1 == any item class
     {
         // Special case - accept vellum for armor/weapon requirements
-        if ((spellInfo->EquippedItemClass == ITEM_CLASS_ARMOR && proto->IsArmorVellum())
-            ||(spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON && proto->IsWeaponVellum()))
+        if ((spellInfo->EquippedItemClass == ITEM_CLASS_ARMOR ||
+            spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON) && proto->IsVellum())
             if (spellInfo->IsAbilityOfSkillType(SKILL_ENCHANTING)) // only for enchanting spells
                 return true;
 
@@ -1219,33 +1192,303 @@ bool Item::CheckSoulboundTradeExpire()
     return false;
 }
 
-uint32 Item::GetFakeEntry() // custom
+bool Item::CanBeTransmogrified() const
 {
-    ItemFakeEntryContainer::const_iterator itr = sObjectMgr->_itemFakeEntryStore.find(GetGUIDLow());
-    if (itr == sObjectMgr->_itemFakeEntryStore.end()) return NULL;
-    return itr->second;
-}
+    ItemTemplate const* proto = GetTemplate();
 
-bool Item::DeleteFakeEntry() // custom
-{
-    if (!GetFakeEntry())
+    if (!proto)
         return false;
-    GetOwner()->UpdateUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + (GetSlot() * 2), GetEntry());
-    DeleteFakeFromDB(GetGUIDLow());
+
+    if (proto->Quality == ITEM_QUALITY_LEGENDARY)
+        return false;
+
+    if (proto->Class != ITEM_CLASS_ARMOR &&
+        proto->Class != ITEM_CLASS_WEAPON)
+        return false;
+
+    if (proto->Class == ITEM_CLASS_WEAPON && proto->SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE)
+        return false;
+
+    if (proto->Flags2 & ITEM_FLAGS_EXTRA_CANNOT_BE_TRANSMOG)
+        return false;
+
+    if (!HasStats())
+        return false;
+
     return true;
 }
 
-void Item::DeleteFakeFromDB(uint32 lowGUID) // custom
+bool Item::CanTransmogrify() const
 {
-    sObjectMgr->_itemFakeEntryStore.erase(lowGUID);
-    CharacterDatabase.PExecute("DELETE FROM custom_transmogrification WHERE GUID = %u", lowGUID);
+    ItemTemplate const* proto = GetTemplate();
+
+    if (!proto)
+        return false;
+
+    if (proto->Flags2 & ITEM_FLAGS_EXTRA_CANNOT_TRANSMOG)
+        return false;
+
+    if (proto->Quality == ITEM_QUALITY_LEGENDARY)
+        return false;
+
+    if (proto->Class != ITEM_CLASS_ARMOR &&
+        proto->Class != ITEM_CLASS_WEAPON)
+        return false;
+
+    if (proto->Class == ITEM_CLASS_WEAPON && proto->SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE)
+        return false;
+
+    if (proto->Flags2 & ITEM_FLAGS_EXTRA_CAN_TRANSMOG)
+        return true;
+
+    if (!HasStats())
+        return false;
+
+    return true;
 }
 
-void Item::SetFakeEntry(uint32 entry) // custom
+bool Item::CanTransmogrifyItemWithItem(Item const* transmogrified, Item const* transmogrifier)
 {
-    GetOwner()->UpdateUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + (GetSlot() * 2), entry);
-    sObjectMgr->_itemFakeEntryStore[GetGUIDLow()] = entry;
-    CharacterDatabase.PExecute("REPLACE INTO custom_transmogrification (GUID, FakeEntry) VALUES (%u, %u)", GetGUIDLow(), entry);
+    if (!transmogrifier || !transmogrified)
+        return false;
+
+    ItemTemplate const* proto1 = transmogrifier->GetTemplate(); // source
+    ItemTemplate const* proto2 = transmogrified->GetTemplate(); // dest
+
+    if (proto1->ItemId == proto2->ItemId)
+        return false;
+
+    if (!transmogrified->CanTransmogrify() || !transmogrifier->CanBeTransmogrified())
+        return false;
+
+    if (proto1->InventoryType == INVTYPE_BAG ||
+        proto1->InventoryType == INVTYPE_RELIC ||
+        proto1->InventoryType == INVTYPE_BODY ||
+        proto1->InventoryType == INVTYPE_FINGER ||
+        proto1->InventoryType == INVTYPE_TRINKET ||
+        proto1->InventoryType == INVTYPE_AMMO ||
+        proto1->InventoryType == INVTYPE_QUIVER)
+        return false;
+
+    if (proto1->SubClass != proto2->SubClass && (proto1->Class != ITEM_CLASS_WEAPON || !proto2->IsRangedWeapon() || !proto1->IsRangedWeapon()))
+        return false;
+
+    if (proto1->InventoryType != proto2->InventoryType &&
+        (proto1->Class != ITEM_CLASS_WEAPON || (proto2->InventoryType != INVTYPE_WEAPONMAINHAND && proto2->InventoryType != INVTYPE_WEAPONOFFHAND)) &&
+        (proto1->Class != ITEM_CLASS_ARMOR || (proto1->InventoryType != INVTYPE_CHEST && proto2->InventoryType != INVTYPE_ROBE && proto1->InventoryType != INVTYPE_ROBE && proto2->InventoryType != INVTYPE_CHEST)))
+        return false;
+
+    return true;
+}
+
+bool Item::HasStats() const
+{
+    if (GetItemRandomPropertyId() != 0)
+        return true;
+
+    ItemTemplate const* proto = GetTemplate();
+    for (uint8 i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
+        if (proto->ItemStat[i].ItemStatValue != 0)
+            return true;
+
+    return false;
+}
+
+// used by mail items, transmog cost, stationeryinfo and others
+uint32 Item::GetSellPrice(ItemTemplate const* proto, bool& normalSellPrice)
+{
+    normalSellPrice = true;
+
+    if (proto->Flags2 & ITEM_FLAGS_EXTRA_HAS_NORMAL_PRICE)
+    {
+        return proto->BuyPrice;
+    }
+    else
+    {
+        ImportPriceQualityEntry const* qualityPrice = sImportPriceQualityStore.LookupEntry(proto->Quality + 1);
+        ItemPriceBaseEntry const* basePrice = sItemPriceBaseStore.LookupEntry(proto->ItemLevel);
+
+        if (!qualityPrice || !basePrice)
+            return 0;
+
+        float qualityFactor = qualityPrice->Factor;
+        float baseFactor = 0.0f;
+
+        uint32 inventoryType = proto->InventoryType;
+
+        if (inventoryType == INVTYPE_WEAPON ||
+            inventoryType == INVTYPE_2HWEAPON ||
+            inventoryType == INVTYPE_WEAPONMAINHAND ||
+            inventoryType == INVTYPE_WEAPONOFFHAND ||
+            inventoryType == INVTYPE_RANGED ||
+            inventoryType == INVTYPE_THROWN ||
+            inventoryType == INVTYPE_RANGEDRIGHT)
+            baseFactor = basePrice->WeaponFactor;
+        else
+            baseFactor = basePrice->ArmorFactor;
+
+        if (inventoryType == INVTYPE_ROBE)
+            inventoryType = INVTYPE_CHEST;
+
+        float typeFactor = 0.0f;
+        int8 weapType = -1;
+
+        switch (inventoryType)
+        {
+            case INVTYPE_HEAD:
+            case INVTYPE_SHOULDERS:
+            case INVTYPE_CHEST:
+            case INVTYPE_WAIST:
+            case INVTYPE_LEGS:
+            case INVTYPE_FEET:
+            case INVTYPE_WRISTS:
+            case INVTYPE_HANDS:
+            case INVTYPE_CLOAK:
+            {
+                ImportPriceArmorEntry const* armorPrice = sImportPriceArmorStore.LookupEntry(inventoryType);
+                if (!armorPrice)
+                    return 0;
+
+                switch (proto->SubClass)
+                {
+                    case ITEM_SUBCLASS_ARMOR_MISCELLANEOUS:
+                    case ITEM_SUBCLASS_ARMOR_CLOTH:
+                        typeFactor = armorPrice->ClothFactor;
+                        break;
+                    case ITEM_SUBCLASS_ARMOR_LEATHER:
+                        typeFactor = armorPrice->LeatherFactor;
+                        break;
+                    case ITEM_SUBCLASS_ARMOR_MAIL:
+                        typeFactor = armorPrice->MailFactor;
+                        break;
+                    case ITEM_SUBCLASS_ARMOR_PLATE:
+                        typeFactor = armorPrice->PlateFactor;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                break;
+            }
+            case INVTYPE_SHIELD:
+            {
+                ImportPriceShieldEntry const* shieldPrice = sImportPriceShieldStore.LookupEntry(1); // it only has two rows, it's unclear which is the one used
+                if (!shieldPrice)
+                    return 0;
+
+                typeFactor = shieldPrice->Factor;
+                break;
+            }
+            case INVTYPE_WEAPONMAINHAND:
+                weapType = 0;
+                break;
+            case INVTYPE_WEAPONOFFHAND:
+                weapType = 1;
+                break;
+            case INVTYPE_WEAPON:
+                weapType = 2;
+                break;
+            case INVTYPE_2HWEAPON:
+                weapType = 3;
+                break;
+            case INVTYPE_RANGED:
+            case INVTYPE_RANGEDRIGHT:
+            case INVTYPE_RELIC:
+                weapType = 4;
+                break;
+            default:
+                return proto->BuyPrice;
+        }
+
+        if (weapType != -1)
+        {
+            ImportPriceWeaponEntry const* weaponPrice = sImportPriceWeaponStore.LookupEntry(weapType + 1);
+            if (!weaponPrice)
+                return 0;
+
+            typeFactor = weaponPrice->Factor;
+        }
+
+        normalSellPrice = false;
+        return uint32(qualityFactor * proto->Unk430_2 * proto->Unk430_1 * typeFactor * baseFactor);
+    }
+}
+
+uint32 Item::GetSpecialPrice(ItemTemplate const* proto, uint32 minimumPrice /*= 10000*/)
+{
+    uint32 cost = 0;
+
+    if (proto->Flags2 & ITEM_FLAGS_EXTRA_HAS_NORMAL_PRICE)
+        cost = proto->SellPrice;
+    else
+    {
+        bool normalPrice;
+        cost = Item::GetSellPrice(proto, normalPrice);
+
+        if (!normalPrice)
+        {
+            if (proto->BuyCount <= 1)
+            {
+                ItemClassEntry const* classEntry = sItemClassStore.LookupEntry(proto->Class);
+                if (classEntry)
+                    cost *= classEntry->PriceFactor;
+                else
+                    cost = 0;
+            }
+            else
+                cost /= 4 * proto->BuyCount;
+        }
+        else
+            cost = proto->SellPrice;
+    }
+
+    if (cost < minimumPrice)
+        cost = minimumPrice;
+
+    return cost;
+}
+
+int32 Item::GetReforgableStat(ItemModType statType) const
+{
+    ItemTemplate const* proto = GetTemplate();
+    for (uint32 i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
+        if (ItemModType(proto->ItemStat[i].ItemStatType) == statType)
+            return proto->ItemStat[i].ItemStatValue;
+
+    int32 randomPropId = GetItemRandomPropertyId();
+    if (!randomPropId)
+        return 0;
+
+    if (randomPropId < 0)
+    {
+        ItemRandomSuffixEntry const* randomSuffix = sItemRandomSuffixStore.LookupEntry(-randomPropId);
+        if (!randomSuffix)
+            return 0;
+
+        for (uint32 e = PROP_ENCHANTMENT_SLOT_0; e <= PROP_ENCHANTMENT_SLOT_4; ++e)
+            if (SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(GetEnchantmentId(EnchantmentSlot(e))))
+                for (uint32 f = 0; f < MAX_ITEM_ENCHANTMENT_EFFECTS; ++f)
+                    if (enchant->type[f] == ITEM_ENCHANTMENT_TYPE_STAT && ItemModType(enchant->spellid[f]) == statType)
+                        for (int k = 0; k < 5; ++k)
+                            if (randomSuffix->enchant_id[k] == enchant->ID)
+                                return int32((randomSuffix->prefix[k] * GetItemSuffixFactor()) / 10000);
+    }
+    else
+    {
+        ItemRandomPropertiesEntry const* randomProp = sItemRandomPropertiesStore.LookupEntry(randomPropId);
+        if (!randomProp)
+            return 0;
+
+        for (uint32 e = PROP_ENCHANTMENT_SLOT_0; e <= PROP_ENCHANTMENT_SLOT_4; ++e)
+            if (SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(GetEnchantmentId(EnchantmentSlot(e))))
+                for (uint32 f = 0; f < MAX_ITEM_ENCHANTMENT_EFFECTS; ++f)
+                    if (enchant->type[f] == ITEM_ENCHANTMENT_TYPE_STAT && ItemModType(enchant->spellid[f]) == statType)
+                        for (int k = 0; k < MAX_ITEM_ENCHANTMENT_EFFECTS; ++k)
+                            if (randomProp->enchant_id[k] == enchant->ID)
+                                return int32(enchant->amount[k]);
+    }
+
+    return 0;
 }
 
 void Item::ItemContainerSaveLootToDB()
