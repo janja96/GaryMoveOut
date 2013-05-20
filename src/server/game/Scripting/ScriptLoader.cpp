@@ -42,10 +42,6 @@ void AddSC_npc_mmr_reset();
 void AddSC_npc_shop();
 // Fast Arena Start
 void AddSC_fast_arena_start();
-// Fake Players
-void AddSC_fake_commandscript();
-// Arena Spectator
-void AddSC_arena_spectator_script();
 // Factions on Channel
 void AddSC_channel_factions();
 
@@ -473,12 +469,11 @@ void AddSC_boss_kologarn();
 void AddSC_boss_assembly_of_iron();
 void AddSC_boss_general_vezax();
 void AddSC_ulduar_teleporter();
-void AddSC_ulduar_trash();
 void AddSC_boss_mimiron();
 void AddSC_boss_hodir();
 void AddSC_boss_thorim();
 void AddSC_boss_freya();
-void AddSC_boss_yoggsaron();
+void AddSC_boss_yogg_saron();
 void AddSC_boss_algalon_the_observer();
 void AddSC_instance_ulduar();
 void AddSC_boss_keleseth();              //Utgarde Keep
@@ -527,6 +522,7 @@ void AddSC_boss_the_lich_king_hor();
 void AddSC_boss_lord_marrowgar();       // Icecrown Citadel
 void AddSC_boss_lady_deathwhisper();
 void AddSC_boss_deathbringer_saurfang();
+void AddSC_boss_gunship_battle();
 void AddSC_boss_festergut();
 void AddSC_boss_rotface();
 void AddSC_boss_professor_putricide();
@@ -538,7 +534,6 @@ void AddSC_boss_the_lich_king();
 void AddSC_icecrown_citadel_teleport();
 void AddSC_instance_icecrown_citadel();
 void AddSC_icecrown_citadel();
-void AddSC_icc_trash();
 void AddSC_instance_ruby_sanctum();      // Ruby Sanctum
 void AddSC_ruby_sanctum();
 void AddSC_boss_baltharus_the_warborn();
@@ -1224,12 +1219,11 @@ void AddNorthrendScripts()
     AddSC_boss_assembly_of_iron();
     AddSC_boss_kologarn();
     AddSC_ulduar_teleporter();
-    AddSC_ulduar_trash();
     AddSC_boss_mimiron();
     AddSC_boss_hodir();
     AddSC_boss_thorim();
     AddSC_boss_freya();
-    AddSC_boss_yoggsaron();
+    AddSC_boss_yogg_saron();
     AddSC_boss_algalon_the_observer();
     AddSC_instance_ulduar();
     AddSC_boss_keleseth();              //Utgarde Keep
@@ -1278,6 +1272,7 @@ void AddNorthrendScripts()
     AddSC_boss_lord_marrowgar();        // Icecrown Citadel
     AddSC_boss_lady_deathwhisper();
     AddSC_boss_deathbringer_saurfang();
+    AddSC_boss_gunship_battle();
     AddSC_boss_festergut();
     AddSC_boss_rotface();
     AddSC_boss_professor_putricide();
@@ -1289,7 +1284,6 @@ void AddNorthrendScripts()
     AddSC_icecrown_citadel_teleport();
     AddSC_instance_icecrown_citadel();
     AddSC_icecrown_citadel();
-    AddSC_icc_trash();
     AddSC_instance_ruby_sanctum();      // Ruby Sanctum
     AddSC_ruby_sanctum();
     AddSC_boss_baltharus_the_warborn();
@@ -1364,10 +1358,6 @@ void AddCustomScripts()
     AddSC_npc_shop();
     // Fast Arena Start
     AddSC_fast_arena_start();
-    // Fake Players
-    AddSC_fake_commandscript();
-    // Arena Spectator
-    AddSC_arena_spectator_script();
     // Factions on Channel
     AddSC_channel_factions();
 #endif

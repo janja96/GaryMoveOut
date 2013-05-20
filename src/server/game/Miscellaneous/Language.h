@@ -209,7 +209,9 @@ enum TrinityStrings
     LANG_YOU_CHANGE_RUNIC_POWER         = 173,
     LANG_YOURS_RUNIC_POWER_CHANGED      = 174,
     LANG_LIQUID_STATUS                  = 175,
-    // Room for more level 1              176-199 not used
+    LANG_INVALID_GAMEOBJECT_TYPE        = 176,
+    LANG_GAMEOBJECT_DAMAGED             = 177,
+    // Room for more level 1              178-199 not used
 
     // level 2 chat
     LANG_NO_SELECTION                   = 200,
@@ -1182,9 +1184,6 @@ enum TrinityStrings
     LANG_SYSTEMMESSAGE_GAMEMASTER       = 11667,
     LANG_SYSTEMMESSAGE_GUARD            = 11668,
     LANG_SYSTEMMESSAGE_DEVELOPER        = 11669,
-
-    // Fake players
-    LANG_FAKE_DND                       = 12003,
 
     LANG_REM_TRANSMOGRIFICATIONS_ITEMS  = 11100,
     LANG_ERR_NO_TRANSMOGRIFICATIONS     = 11101,
