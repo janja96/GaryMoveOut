@@ -319,7 +319,7 @@ public:
             if (map->IsBattlegroundOrArena())
             {
                 // only allow if gm mode is on
-                if (!_player->isGameMaster())
+                if (!_player->IsGameMaster())
                 {
                     handler->PSendSysMessage(LANG_CANNOT_GO_TO_BG_GM, chrNameLink.c_str());
                     handler->SetSentErrorMessage(true);
@@ -354,7 +354,7 @@ public:
                 else
                 {
                     // we are not in group, let's verify our GM mode
-                    if (!_player->isGameMaster())
+                    if (!_player->IsGameMaster())
                     {
                         handler->PSendSysMessage(LANG_CANNOT_GO_TO_INST_GM, chrNameLink.c_str());
                         handler->SetSentErrorMessage(true);
@@ -384,7 +384,7 @@ public:
             handler->PSendSysMessage(LANG_APPEARING_AT, chrNameLink.c_str());
 
             // stop flight if need
-            if (_player->isInFlight())
+            if (_player->IsInFlight())
             {
                 _player->GetMotionMaster()->MovementExpired();
                 _player->CleanupAfterTaxiFlight();
@@ -418,7 +418,7 @@ public:
                 return false;
 
             // stop flight if need
-            if (_player->isInFlight())
+            if (_player->IsInFlight())
             {
                 _player->GetMotionMaster()->MovementExpired();
                 _player->CleanupAfterTaxiFlight();
@@ -468,7 +468,7 @@ public:
             if (map->IsBattlegroundOrArena())
             {
                 // only allow if gm mode is on
-                if (!_player->isGameMaster())
+                if (!_player->IsGameMaster())
                 {
                     handler->PSendSysMessage(LANG_CANNOT_GO_TO_BG_GM, nameLink.c_str());
                     handler->SetSentErrorMessage(true);
@@ -509,7 +509,7 @@ public:
                 ChatHandler(target->GetSession()).PSendSysMessage(LANG_SUMMONED_BY, handler->playerLink(_player->GetName()).c_str());
 
             // stop flight if need
-            if (target->isInFlight())
+            if (target->IsInFlight())
             {
                 target->GetMotionMaster()->MovementExpired();
                 target->CleanupAfterTaxiFlight();
@@ -584,7 +584,7 @@ public:
 
         for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
         {
-            Player* player = itr->getSource();
+            Player* player = itr->GetSource();
 
             if (!player || player == handler->GetSession()->GetPlayer() || !player->GetSession())
                 continue;
@@ -620,7 +620,7 @@ public:
                 ChatHandler(player->GetSession()).PSendSysMessage(LANG_SUMMONED_BY, handler->GetNameLink().c_str());
 
             // stop flight if need
-            if (player->isInFlight())
+            if (player->IsInFlight())
             {
                 player->GetMotionMaster()->MovementExpired();
                 player->CleanupAfterTaxiFlight();
@@ -661,7 +661,7 @@ public:
                 return false;
         }
 
-        if (target->isAlive())
+        if (target->IsAlive())
         {
             if (sWorld->getBoolConfig(CONFIG_DIE_COMMAND_MODE))
                 handler->GetSession()->GetPlayer()->Kill(target);
@@ -704,7 +704,7 @@ public:
             return false;
         }
 
-        if (player->isInFlight())
+        if (player->IsInFlight())
         {
             handler->SendSysMessage(LANG_YOU_IN_FLIGHT);
             handler->SetSentErrorMessage(true);
@@ -869,7 +869,7 @@ public:
         }
 
         // stop flight if need
-        if (target->isInFlight())
+        if (target->IsInFlight())
         {
             target->GetMotionMaster()->MovementExpired();
             target->CleanupAfterTaxiFlight();
@@ -965,7 +965,7 @@ public:
         if (!handler->extractPlayerTarget(player_str, &player))
             return false;
 
-        if (player->isInFlight() || player->isInCombat())
+        if (player->IsInFlight() || player->IsInCombat())
         {
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(7355);
             if (!spellInfo)
@@ -1587,7 +1587,12 @@ public:
         std::string areaName    = "<unknown>";
         std::string zoneName    = "<unknown>";
 
-        // Guild data print is only defined if part of Guild
+        // Guild data print variables defined so that they exist, but are not necessarily used
+        uint32 guildId           = 0;
+        std::string guildName;
+        std::string guildRank;
+        std::string note;
+        std::string officeNote;
 
         // Mail data print is only defined if you have a mail
 
@@ -1607,7 +1612,7 @@ public:
             muteTime          = target->GetSession()->m_muteTime;
             mapId             = target->GetMapId();
             areaId            = target->GetAreaId();
-            alive             = target->isAlive() ? "Yes" : "No";
+            alive             = target->IsAlive() ? "Yes" : "No";
             gender            = target->getGender();
             phase             = target->GetPhaseMask();
         }
@@ -1626,18 +1631,19 @@ public:
             if (!result)
                 return false;
 
-            Field* fields     = result->Fetch();
-            totalPlayerTime   = fields[0].GetUInt32();
-            level             = fields[1].GetUInt8();
-            money             = fields[2].GetUInt32();
-            accId             = fields[3].GetUInt32();
-            raceid            = fields[4].GetUInt8();
-            classid           = fields[5].GetUInt8();
-            mapId             = fields[6].GetUInt16();
-            areaId            = fields[7].GetUInt16();
-            gender            = fields[8].GetUInt8();
-            uint32 health = fields[9].GetUInt32();
+            Field* fields      = result->Fetch();
+            totalPlayerTime    = fields[0].GetUInt32();
+            level              = fields[1].GetUInt8();
+            money              = fields[2].GetUInt32();
+            accId              = fields[3].GetUInt32();
+            raceid             = fields[4].GetUInt8();
+            classid            = fields[5].GetUInt8();
+            mapId              = fields[6].GetUInt16();
+            areaId             = fields[7].GetUInt16();
+            gender             = fields[8].GetUInt8();
+            uint32 health      = fields[9].GetUInt32();
             uint32 playerFlags = fields[10].GetUInt32();
+
             if (!health || playerFlags & PLAYER_FLAGS_GHOST)
                 alive = "No";
             else
@@ -1655,13 +1661,13 @@ public:
             Field* fields = result->Fetch();
             userName      = fields[0].GetString();
             security      = fields[1].GetUInt8();
-            eMail         = fields[2].GetString();
 
-            // Only fetch these fields if commander has sufficient rights AND is online (prevent cheating)
-            /// @TODO: Add RBAC for "Can query ip and login data"
-            if (!handler->GetSession() || handler->GetSession()->GetSecurity() >= AccountTypes(security))
+            // Only fetch these fields if commander has sufficient rights)
+            if (handler->HasPermission(RBAC_PERM_COMMANDS_PINFO_CHECK_PERSONAL_DATA) && // RBAC Perm. 48, Role 39
+               (!handler->GetSession() || handler->GetSession()->GetSecurity() >= AccountTypes(security)))
             {
-                lastIp = fields[3].GetString();
+                eMail     = fields[2].GetString();
+                lastIp    = fields[3].GetString();
                 lastLogin = fields[4].GetString();
 
                 uint32 ip = inet_addr(lastIp.c_str());
@@ -1677,6 +1683,12 @@ public:
                     lastIp.append(fields2[0].GetString());
                     lastIp.append(")");
                 }
+            }
+            else
+            {
+                eMail     = "Unauthorized";
+                lastIp    = "Unauthorized";
+                lastLogin = "Unauthorized";
             }
             muteTime      = fields[5].GetUInt64();
             muteReason    = fields[6].GetString();
@@ -1728,7 +1740,25 @@ public:
         if (result4)
         {
             Field* fields = result4->Fetch();
-            xp            = fields[0].GetUInt32();
+            xp            = fields[0].GetUInt32(); // Used for "current xp" output and "%u XP Left" calculation
+            uint32 gguid  = fields[1].GetUInt32(); // We check if have a guild for the person, so we might not require to query it at all
+
+            if (gguid != 0)
+            {
+                // Guild Data - an own query, because it may not happen.
+                PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED);
+                stmt3->setUInt32(0, lowguid);
+                PreparedQueryResult result5 = CharacterDatabase.Query(stmt3);
+                if (result5)
+                {
+                    Field* fields  = result5->Fetch();
+                    guildId        = fields[0].GetUInt32();
+                    guildName      = fields[1].GetString();
+                    guildRank      = fields[2].GetString();
+                    note           = fields[3].GetString();
+                    officeNote     = fields[4].GetString();
+                }
+            }
         }
 
         // Initiate output
@@ -1736,7 +1766,7 @@ public:
         handler->PSendSysMessage(LANG_PINFO_PLAYER, target ? "" : handler->GetTrinityString(LANG_OFFLINE), nameLink.c_str(), lowguid);
 
         // Output II. LANG_PINFO_GM_ACTIVE
-        if (target && target->isGameMaster())
+        if (target && target->IsGameMaster())
             handler->PSendSysMessage(LANG_PINFO_GM_ACTIVE);
 
         // Output III. LANG_PINFO_BANNED if ban exists and is applied
@@ -1760,7 +1790,10 @@ public:
         handler->PSendSysMessage(LANG_PINFO_ACC_IP, lastIp.c_str(), locked ? "Yes" : "No");
 
         // Output X. LANG_PINFO_CHR_LEVEL
-        handler->PSendSysMessage(LANG_PINFO_CHR_LEVEL, level, xp, xptotal, (xptotal - xp));
+        if (level != sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+            handler->PSendSysMessage(LANG_PINFO_CHR_LEVEL_LOW, level, xp, xptotal, (xptotal - xp));
+        else
+            handler->PSendSysMessage(LANG_PINFO_CHR_LEVEL_HIGH, level);
 
         // Output XI. LANG_PINFO_CHR_RACE
         raceStr  = GetRaceName(raceid, locale);
@@ -1771,7 +1804,7 @@ public:
         handler->PSendSysMessage(LANG_PINFO_CHR_ALIVE, alive.c_str());
 
         // Output XIII. LANG_PINFO_CHR_PHASE if player is not in GM mode (GM is in every phase)
-        if (target && !target->isGameMaster())                            // IsInWorld() returns false on loadingscreen, so it's more
+        if (target && !target->IsGameMaster())                            // IsInWorld() returns false on loadingscreen, so it's more
             handler->PSendSysMessage(LANG_PINFO_CHR_PHASE, phase);        // precise than just target (safer ?).
                                                                           // However, as we usually just require a target here, we use target instead.
         // Output XIV. LANG_PINFO_CHR_MONEY
@@ -1795,27 +1828,15 @@ public:
         if (target)
             handler->PSendSysMessage(LANG_PINFO_CHR_MAP, map->name[locale], (!zoneName.empty() ? zoneName.c_str() : "<Unknown>"), (!areaName.empty() ? areaName.c_str() : "<Unknown>"));
 
-        // Guild Data - an own query, because it may not happen.
-        PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED);
-        stmt3->setUInt32(0, lowguid);
-        PreparedQueryResult result5 = CharacterDatabase.Query(stmt3);
-        if (result5)
+        // Output XVII. - XX. if they are not empty
+        if (!guildName.empty())
         {
-            Field* fields = result5->Fetch();
-            uint32 guildId         = fields[0].GetUInt32();
-            std::string guildName  = fields[1].GetString();
-            std::string guildRank  = fields[2].GetString();
-            std::string note       = fields[3].GetString();
-            std::string officeNote = fields[4].GetString();
-
-        // Output XVII. - XX.
-        handler->PSendSysMessage(LANG_PINFO_CHR_GUILD, guildName.c_str(), guildId);
-        handler->PSendSysMessage(LANG_PINFO_CHR_GUILD_RANK, guildRank.c_str());
-        // Only output XIX and XX if they are not empty
-        if (!note.empty())
-            handler->PSendSysMessage(LANG_PINFO_CHR_GUILD_NOTE, note.c_str());
-        if (!officeNote.empty())
-            handler->PSendSysMessage(LANG_PINFO_CHR_GUILD_ONOTE, officeNote.c_str());
+            handler->PSendSysMessage(LANG_PINFO_CHR_GUILD, guildName.c_str(), guildId);
+            handler->PSendSysMessage(LANG_PINFO_CHR_GUILD_RANK, guildRank.c_str());
+            if (!note.empty())
+                handler->PSendSysMessage(LANG_PINFO_CHR_GUILD_NOTE, note.c_str());
+            if (!officeNote.empty())
+                handler->PSendSysMessage(LANG_PINFO_CHR_GUILD_ONOTE, officeNote.c_str());
         }
 
         // Output XXI. LANG_PINFO_CHR_PLAYEDTIME
@@ -1823,23 +1844,24 @@ public:
 
         // Mail Data - an own query, because it may or may not be useful.
         // SQL: "SELECT SUM(CASE WHEN (checked & 1) THEN 1 ELSE 0 END) AS 'readmail', COUNT(*) AS 'totalmail' FROM mail WHERE `receiver` = ?"
-        stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_MAILS);
-        stmt3->setUInt32(0, lowguid);
-        PreparedQueryResult result6 = CharacterDatabase.Query(stmt3);
+        PreparedStatement* stmt4 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_MAILS);
+        stmt4->setUInt32(0, lowguid);
+        PreparedQueryResult result6 = CharacterDatabase.Query(stmt4);
         if (result6)
         {
             // Define the variables, so the compiler knows they exist
             uint32 rmailint = 0;
 
             // Fetch the fields - readmail is a SUM(x) and given out as char! Thus...
+            // ... while totalmail is a COUNT(x), which is given out as INt64, which we just convert on fetch...
             Field* fields         = result6->Fetch();
             std::string readmail  = fields[0].GetString();
-            uint64 totalmail      = fields[1].GetUInt64();
+            uint32 totalmail      = uint32(fields[1].GetUInt64());
 
             // ... we have to convert it from Char to int. We can use totalmail as it is
             rmailint = atol(readmail.c_str());
 
-            // Output XXII. LANG_INFO_CHR_MAILS if at least one mails is given
+            // Output XXII. LANG_INFO_CHR_MAILS if at least one mail is given
             if (totalmail >= 1)
                handler->PSendSysMessage(LANG_PINFO_CHR_MAILS, rmailint, totalmail);
         }
@@ -1855,7 +1877,7 @@ public:
         Unit* target = handler->getSelectedUnit();
         if (player->GetSelection() && target)
         {
-            if (target->GetTypeId() != TYPEID_UNIT || target->isPet())
+            if (target->GetTypeId() != TYPEID_UNIT || target->IsPet())
             {
                 handler->SendSysMessage(LANG_SELECT_CREATURE);
                 handler->SetSentErrorMessage(true);
@@ -2211,7 +2233,7 @@ public:
                 return false;
         }
 
-        if (!target->isAlive())
+        if (!target->IsAlive())
             return true;
 
         char* damageStr = strtok((char*)args, " ");
@@ -2572,7 +2594,7 @@ public:
         Player* player = handler->GetSession()->GetPlayer();
         Creature* creatureTarget = handler->getSelectedCreature();
 
-        if (!creatureTarget || creatureTarget->isPet() || creatureTarget->GetTypeId() == TYPEID_PLAYER)
+        if (!creatureTarget || creatureTarget->IsPet() || creatureTarget->GetTypeId() == TYPEID_PLAYER)
         {
             handler->PSendSysMessage(LANG_SELECT_CREATURE);
             handler->SetSentErrorMessage(true);
@@ -2758,7 +2780,7 @@ public:
                 {
                     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
                     // not let dismiss dead pet
-                    if (pet->isAlive())
+                    if (pet->IsAlive())
                         player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
                 }
             }
